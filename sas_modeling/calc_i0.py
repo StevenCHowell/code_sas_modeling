@@ -30,7 +30,9 @@ def guinier_fit(q, iq, diq=None, dq=None, q_min=0.0, q_max=0.1, view_fit=False):
     dlog_iq = iq[id_x] / diq[id_x]
     dq2 = 2 * q[id_x] * dq[id_x]
 
-    a, b, a_err, b_err = fit_line(q2, log_iq, dlog_iq)
+    # a, b, a_err, b_err = fit_line(q2, log_iq, dlog_iq)
+    vals0 = fit_line(q2, log_iq, dlog_iq)
+    vals1 = fit_line_v1(q2, log_iq, dlog_iq)
 
     rg = np.sqrt(-3 * a)
     rg_err = -3 / (2 * rg) * a_err
@@ -61,6 +63,28 @@ def guinier_fit(q, iq, diq=None, dq=None, q_min=0.0, q_max=0.1, view_fit=False):
         make_figures.plot_fit(q2, log_iq, y_fit, yerr=dlog_iq)
 
     return i0, rg, i0_err, rg_err
+
+
+def fit_line_v1(x, y, dy):
+    '''
+    Fit data for y = ax + b
+    return a and b
+    '''
+
+    # use the last two points to guess the initial values
+    a_guess = (y[-2] - y[-1]) / (x[-2] - x[-1])
+    b_guess = y[-1] - a_guess * x[-1]
+    p_guess = [a_guess, b_guess]
+
+    A = np.vstack([x, np.ones(len(x))]).T
+    out = np.linalg.lstsq(A, y)
+
+    p_final = out[0]
+    a = p_final[0]
+    b = p_final[1]
+
+    return a, b  #, a_err, b_err
+
 
 
 def fit_line(x, y, dy):
