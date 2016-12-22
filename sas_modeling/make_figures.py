@@ -9,6 +9,8 @@
 12345678901234567890123456789012345678901234567890123456789012345678901234567890
 """
 
+from bokeh.plotting import figure, output_file, show
+from bokeh.palettes import Colorblind8 as palette
 
 
 def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
@@ -31,3 +33,29 @@ def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
             y_err_x.append((px, px))
             y_err_y.append((py - err, py + err))
         fig.multi_line(y_err_x, y_err_y, color=color, **error_kwargs)
+
+
+def plot_fit(x, y, y_fit, xerr=None, yerr=None,
+             save_fname='fit_comparison.html'):
+    '''
+    plot data and a fit line
+    '''
+
+    output_file(save_fname)
+
+
+    p = figure(title="some title", x_axis_label='q (1/A)',
+               y_axis_label='I(q)')
+
+    p.line(x, y_fit, color=palette[0], legend="fit", line_width=2)
+
+    if xerr is None:
+        errorbar(p, x[1:], y[1:], yerr=yerr[1:], color=palette[1],
+             point_kwargs={'legend': 'raw'})
+        errorbar(p, x[:1], y[:1], yerr=yerr[:1], color=palette[3],
+             point_kwargs={'legend': 'extrapolated'})
+    else:
+        NotImplemented
+
+    show(p)
+
