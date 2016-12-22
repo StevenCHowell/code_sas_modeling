@@ -76,9 +76,19 @@ def fit_line_v1(x, y, dy):
     a = p[0]
     b = p[1]
 
-    covar = out[1]
-    a_err = np.sqrt( covar[0][0] )
-    b_err = np.sqrt( covar[1][1] ) * b
+    # from the docs page:
+    # residuals : {(), (1,), (K,)} ndarray
+    #   Sums of residuals; squared Euclidean 2-norm for each column in b - a*x.
+    #   If the rank of a is < N or M <= N, this is an empty array. If b is
+    #   1-dimensional, this is a (1,) shape array. Otherwise the shape is (K,).
+    # rank : int
+    #   Rank of matrix a.
+    # s : (min(M, N),) ndarray
+    #   Singular values of a.
+
+    cov = out[1]
+    a_err = np.sqrt( cov[0][0] )
+    b_err = np.sqrt( cov[1][1] ) * b
 
     return a, b, a_err, b_err
 
@@ -91,11 +101,20 @@ def fit_line_v2(x, y, dy):
     '''
 
     out = np.polynomial.polynomial.polyfit(x, y, 1, w=1/dy, full=True)
+    # does not provide the covariance matrix, not sure how to extract error
 
     p_final = out[0]
     a = p_final[1]
     b = p_final[0]
 
+    # from the docs page:
+    # [residuals, rank, singular_values, rcond] : list
+    # These values are only returned if full = True
+    #   resid – sum of squared residuals of the least squares fit
+    #   rank  – the numerical rank of the scaled Vandermonde matrix
+    #   sv    – singular values of the scaled Vandermonde matrix
+    #   rcond – value of rcond.
+    # For more details, see linalg.lstsq.
     residuals = out[1]
     b_err = np.sqrt( residuals[0] ) * b
     a_err = np.sqrt( residuals[1] )
@@ -134,11 +153,42 @@ def fit_line_v4(x, y, dy):
 
     p, cov = np.polyfit(x, y, 1, w=1/dy, cov=True)
 
-    a = p[0]
-    b = p[1]
+    a, b = p
 
-    a_err = np.sqrt( cov[0, 0] )
-    b_err = np.sqrt( cov[1, 1] ) * b
+    # From docs page:
+    # The diagonal of this matrix (cov) are the
+    # variance estimates for each coefficient.
+    a_err, b_err = np.sqrt(np.diag(cov))  # standard devaitions
+
+    return a, b, a_err, b_err
+
+
+def fit_line_v5(x, y, dy):
+    '''
+    Fit data for y = ax + b
+    return a and b
+    method taken from wikipedia:
+    https://en.wikipedia.org/wiki/Linear_least_squares_(mathematics)#Python
+    '''
+
+    X = np.matrix([np.ones(len(x)), x]).T
+    Y = np.matrix(y).T
+    betaHat = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y)
+    print(betaHat)
+    plt.figure(1)
+    xx = np.linspace(0, 5, 2)
+    yy = np.array(betaHat[0] + betaHat[1] * xx)
+
+    p, cov = np.polyfit(x, y, 1, w=1/dy, cov=True)
+
+
+
+    a, b = p
+
+    # From docs page:
+    # The diagonal of this matrix (cov) are the
+    # variance estimates for each coefficient.
+    a_err, b_err = np.sqrt(np.diag(cov))  # standard devaitions
 
     return a, b, a_err, b_err
 
@@ -164,6 +214,26 @@ def fit_line_v0(x, y, dy):
     a = p_final[0]
     b = p_final[1]
 
+    # from the docs page:
+    # cov_x : ndarray
+    #   Uses the fjac and ipvt optional outputs to construct an estimate
+    #   of the jacobian around the solution. None if a singular matrix
+    #   encountered (indicates very flat curvature in some direction).
+    #   This matrix must be multiplied by the residual variance to get the
+    #   covariance of the parameter estimates – see curve_fit.
+    #
+    # curve_fit documentation says:
+    #   The diagonals provide the variance of the parameter estimate.
+    #   To compute one standard deviation errors on the parameters use
+    #   perr = np.sqrt(np.diag(pcov)).
+    #
+    #   How the sigma parameter affects the estimated covariance depends
+    #   on absolute_sigma argument, as described above.
+    #
+    #   If the Jacobian matrix at the solution doesn’t have a full rank,
+    #   then ‘lm’ method returns a matrix filled with np.inf, on the other
+    #   hand ‘trf’ and ‘dogbox’ methods use Moore-Penrose pseudoinverse to
+    #   compute the covariance matrix.
     cov = out[1]
     a_err = np.sqrt( cov[0, 0] )
     b_err = np.sqrt( cov[1, 1] ) * b
@@ -179,6 +249,29 @@ if __name__ == '__main__':
     import os
     import make_figures
 
+
+    x = np.array([1, 2, 3, 4])
+    '''
+    import numpy as np
+    import matplotlib.pyplot as plt
+    input = np.array([
+        [1, 6],
+        [2, 5],
+        [3, 7],
+        [4, 10]
+    ])
+    m = np.shape(input)[0]
+    X = np.matrix([np.ones(m), input[:,0]]).T
+    y = np.matrix(input[:,1]).T
+    betaHat = np.linalg.inv(X.T.dot(X)).dot(X.T).dot(y)
+    print(betaHat)
+    plt.figure(1)
+    xx = np.linspace(0, 5, 2)
+    yy = np.array(betaHat[0] + betaHat[1] * xx)
+    plt.plot(xx, yy.T, color='b')
+    plt.scatter(input[:,0], input[:,1], color='r')
+    plt.show()
+    '''
     data_fname = 'dev/1mgml_LysoSANS.sub'; skiprows = 1
     # data_fname = 'exp_data_lysozyme.dat'; skiprows = 0
     assert os.path.exists(data_fname)
