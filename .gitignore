@@ -2,6 +2,11 @@
 dev/
 debug/
 
+# figure files
+*.html
+*.png
+*.eps
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
