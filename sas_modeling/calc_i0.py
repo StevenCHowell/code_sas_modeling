@@ -11,47 +11,32 @@
 
 import logging
 import numpy as np
+from scipy import optimize
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 
-def guinier_fit(q, iq, diq=None, dq=None, q_min=0.0, q_max=0.1):
+def guinier_fit(q, iq, diq=None, dq=None, q_min=0.0, q_max=0.1, view_fit=False):
     '''
-    Fit data for y = ax + b  return a and b
+    perform Guinier fit
+    return I(0) and Rg
     '''
 
-    # Identify the bin range for the fit
+    # Identify the range for the fit
     id_x = (q >= q_min) & (q <= q_max)
 
     q2 = q[id_x] ** 2
-    logiq = np.log(iq[id_x])
-    dlogiq = iq[id_x] / diq[id_x]
+    log_iq = np.log(iq[id_x])
+    dlog_iq = iq[id_x] / diq[id_x]
     dq2 = 2 * q[id_x] * dq[id_x]
 
-    fit_x = np.zeros(len(q))
+    a, b, a_err, b_err = fit_line(q2, log_iq, dlog_iq)
 
+    rg = np.sqrt(-3 * a)
+    rg_err = -3 / (2 * rg) * a_err
 
-    ############## edit this #################
-    # define our (line) fitting function
-    fitfunc = lambda p, x: p[0] + p[1] * x
-    errfunc = lambda p, x, y, err: (y - fitfunc(p, x)) / err
-
-    pinit = [1.0, -1.0]
-    out = optimize.leastsq(errfunc, pinit,
-                           args=(logx, logy, logyerr), full_output=1)
-
-    pfinal = out[0]
-    covar = out[1]
-    print pfinal
-    print covar
-
-    index = pfinal[1]
-    amp = 10.0**pfinal[0]
-
-    indexErr = np.sqrt( covar[0][0] )
-    ampErr = np.sqrt( covar[1][1] ) * amp
-
-    ############### edit this ################
+    i0 = np.exp(b)
+    i0_err = i0 * b_err
 
     # A = np.vstack([q2 / dlogiq, 1.0 / dlogiq]).T
     # p, residuals, _, _ = np.linalg.lstsq(A, iq / diq)
@@ -66,20 +51,52 @@ def guinier_fit(q, iq, diq=None, dq=None, q_min=0.0, q_max=0.1):
     # except:
         # err = [-1.0, -1.0]
 
-    # return p, err
+    if view_fit:
+        import make_figures
+        q2 = np.insert(q2, 0, 0.0)
+        log_iq = np.insert(log_iq, 0, b)
+        dlog_iq = np.insert(dlog_iq, 0, b_err)
+
+        y_fit = a * q2 + b
+        make_figures.plot_fit(q2, log_iq, y_fit, yerr=dlog_iq)
+
+    return i0, rg, i0_err, rg_err
+
+
+def fit_line(x, y, dy):
+    '''
+    Fit data for y = ax + b
+    return a and b
+    '''
+
+    # define our (line) fitting function
+    fitfunc = lambda p, x: p[0] * x + p[1]
+    errfunc = lambda p, x, y, yerr: (y - fitfunc(p, x)) / yerr
+
+    # use the last two points to guess the initial values
+    a_guess = (y[-2] - y[-1]) / (x[-2] - x[-1])
+    b_guess = y[-1] - a_guess * x[-1]
+    p_guess = [a_guess, b_guess]
+    out = optimize.leastsq(errfunc, p_guess, args=(x, y, dy), full_output=1)
+
+    p_final = out[0]
+    a = p_final[0]
+    b = p_final[1]
+
+    covar = out[1]
+    a_err = np.sqrt( covar[0][0] )
+    b_err = np.sqrt( covar[1][1] ) * b
+
+    return a, b, a_err, b_err
 
 
 def bayesian():
     NotImplemented
 
 
-def dummy():
-    print('\m/ >.< \m/')
-
-
-
 if __name__ == '__main__':
     import os
+    import make_figures
 
     data_fname = 'dev/1mgml_LysoSANS.sub'; skiprows = 1
     # data_fname = 'exp_data_lysozyme.dat'; skiprows = 0
@@ -91,8 +108,8 @@ if __name__ == '__main__':
     # dy = data[:, 2] / data[:, 1]  # d(log(I(q))) = dI(q) / I(q)
     # dx = 2 * data[:, 0] * data[:, 3]  # d(q**2) = 2 q dq
 
-    guinier_fit(data[:, 0], data[:, 1], diq=data[:, 2], dq=data[:, 3],
-                q_max=0.07)
-
+    i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1],
+                                         diq=data[:,2], dq=data[:, 3],
+                                         q_max=0.07, view_fit=True)
 
     logging.debug('\m/ >.< \m/')
