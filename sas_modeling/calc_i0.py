@@ -31,27 +31,25 @@ def guinier_fit(q, iq, diq=None, dq=None, q_min=0.0, q_max=0.1, view_fit=False):
     dq2 = 2 * q[id_x] * dq[id_x]
 
     # a, b, a_err, b_err = fit_line(q2, log_iq, dlog_iq)
-    vals0 = fit_line(q2, log_iq, dlog_iq)
+    vals0 = fit_line_v0(q2, log_iq, dlog_iq)
+    vals4 = fit_line_v4(q2, log_iq, dlog_iq)
+    vals3 = fit_line_v3(q2, log_iq, dlog_iq)
+    vals2 = fit_line_v2(q2, log_iq, dlog_iq)
     vals1 = fit_line_v1(q2, log_iq, dlog_iq)
+
+    a, b, a_err, b_err = vals3; save_fname = 'fit_v3_comparison.html'
+    # a, b, a_err, b_err = vals2; save_fname = 'fit_v2_comparison.html'
+    # a, b, a_err, b_err = vals1; save_fname = 'fit_v1_comparison.html'
+    a, b, a_err, b_err = vals0; save_fname = 'fit_v0_comparison.html'
+
+
+
 
     rg = np.sqrt(-3 * a)
     rg_err = -3 / (2 * rg) * a_err
 
     i0 = np.exp(b)
     i0_err = i0 * b_err
-
-    # A = np.vstack([q2 / dlogiq, 1.0 / dlogiq]).T
-    # p, residuals, _, _ = np.linalg.lstsq(A, iq / diq)
-
-    # # Get the covariance matrix, defined as inv_cov = a_transposed * a
-    # err = np.zeros(2)
-    # try:
-        # inv_cov = np.dot(A.transpose(), A)
-        # cov = np.linalg.pinv(inv_cov)
-        # err_matrix = math.fabs(residuals) * cov
-        # err = [math.sqrt(err_matrix[0][0]), math.sqrt(err_matrix[1][1])]
-    # except:
-        # err = [-1.0, -1.0]
 
     if view_fit:
         import make_figures
@@ -60,7 +58,8 @@ def guinier_fit(q, iq, diq=None, dq=None, q_min=0.0, q_max=0.1, view_fit=False):
         dlog_iq = np.insert(dlog_iq, 0, b_err)
 
         y_fit = a * q2 + b
-        make_figures.plot_fit(q2, log_iq, y_fit, yerr=dlog_iq)
+        make_figures.plot_fit(q2, log_iq, y_fit, yerr=dlog_iq,
+                              save_fname=save_fname)
 
     return i0, rg, i0_err, rg_err
 
@@ -71,26 +70,84 @@ def fit_line_v1(x, y, dy):
     return a and b
     '''
 
-    # use the last two points to guess the initial values
-    a_guess = (y[-2] - y[-1]) / (x[-2] - x[-1])
-    b_guess = y[-1] - a_guess * x[-1]
-    p_guess = [a_guess, b_guess]
+    A = np.vstack([x / dy, 1.0 / dy]).T  # weight each row by 1 / dy
+    p, residuals, _, _ = np.linalg.lstsq(A, y / dy)
 
-    A = np.vstack([x, np.ones(len(x))]).T
-    out = np.linalg.lstsq(A, y)
+    a = p[0]
+    b = p[1]
 
-    p_final = out[0]
-    a = p_final[0]
-    b = p_final[1]
+    covar = out[1]
+    a_err = np.sqrt( covar[0][0] )
+    b_err = np.sqrt( covar[1][1] ) * b
 
-    return a, b  #, a_err, b_err
+    return a, b, a_err, b_err
 
 
-
-def fit_line(x, y, dy):
+def fit_line_v2(x, y, dy):
     '''
     Fit data for y = ax + b
     return a and b
+    essentially the same results as fit_line_v0
+    '''
+
+    out = np.polynomial.polynomial.polyfit(x, y, 1, w=1/dy, full=True)
+
+    p_final = out[0]
+    a = p_final[1]
+    b = p_final[0]
+
+    residuals = out[1]
+    b_err = np.sqrt( residuals[0] ) * b
+    a_err = np.sqrt( residuals[1] )
+
+    return a, b, a_err, b_err
+
+
+def fit_line_v3(x, y, dy):
+    '''
+    Fit data for y = ax + b
+    return a and b
+    method taken from SasView:
+    github.com/SasView/sasview/blob/master/src/sas/sascalc/invariant/invariant.py
+    '''
+    A = np.vstack([x / dy, 1.0 / dy]).T
+    p, residuals, _, _ = np.linalg.lstsq(A, y / dy)
+
+    a = p[0]
+    b = p[1]
+
+    # Get the covariance matrix, defined as inv_cov = a_transposed * a
+    inv_cov = np.dot(A.transpose(), A)
+    cov = np.linalg.pinv(inv_cov)
+    err_matrix = np.abs(residuals) * cov
+    a_err = np.sqrt(err_matrix[0][0])
+    b_err = np.sqrt(err_matrix[1][1])
+
+    return a, b, a_err, b_err
+
+
+def fit_line_v4(x, y, dy):
+    '''
+    Fit data for y = ax + b
+    return a and b
+    '''
+
+    p, cov = np.polyfit(x, y, 1, w=1/dy, cov=True)
+
+    a = p[0]
+    b = p[1]
+
+    a_err = np.sqrt( cov[0, 0] )
+    b_err = np.sqrt( cov[1, 1] ) * b
+
+    return a, b, a_err, b_err
+
+
+def fit_line_v0(x, y, dy):
+    '''
+    Fit data for y = ax + b
+    return a and b
+    essentially the same results as fit_line_v2
     '''
 
     # define our (line) fitting function
@@ -107,9 +164,9 @@ def fit_line(x, y, dy):
     a = p_final[0]
     b = p_final[1]
 
-    covar = out[1]
-    a_err = np.sqrt( covar[0][0] )
-    b_err = np.sqrt( covar[1][1] ) * b
+    cov = out[1]
+    a_err = np.sqrt( cov[0, 0] )
+    b_err = np.sqrt( cov[1, 1] ) * b
 
     return a, b, a_err, b_err
 
