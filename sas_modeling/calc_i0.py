@@ -16,56 +16,6 @@ from scipy import optimize
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 
-def guinier_fit(q, iq, diq=None, dq=None, q_min=0.0, q_max=0.1, view_fit=False):
-    '''
-    perform Guinier fit
-    return I(0) and Rg
-    '''
-
-    # Identify the range for the fit
-    id_x = (q >= q_min) & (q <= q_max)
-
-    q2 = q[id_x] ** 2
-    log_iq = np.log(iq[id_x])
-    dlog_iq = iq[id_x] / diq[id_x]
-    dq2 = 2 * q[id_x] * dq[id_x]
-
-    # a, b, a_err, b_err = fit_line(q2, log_iq, dlog_iq)
-    # vals0 = fit_line_v0(q2, log_iq, dlog_iq)
-    # vals1 = fit_line_v1(q2, log_iq, dlog_iq)
-    # vals2 = fit_line_v2(q2, log_iq, dlog_iq)
-    # vals3 = fit_line_v3(q2, log_iq, dlog_iq)
-    # vals4 = fit_line_v4(q2, log_iq, dlog_iq)
-    # vals5 = fit_line_v5(q2, log_iq, dlog_iq)  # seems reasonable
-    vals6 = fit_line_v6(q2, log_iq, dlog_iq)
-
-    # a, b, a_err, b_err = vals0; save_fname = 'fit_v0_comparison.html'
-    # a, b, a_err, b_err = vals1; save_fname = 'fit_v1_comparison.html'
-    # a, b, a_err, b_err = vals2; save_fname = 'fit_v2_comparison.html'
-    # a, b, a_err, b_err = vals3; save_fname = 'fit_v3_comparison.html'
-    # a, b, a_err, b_err = vals4; save_fname = 'fit_v4_comparison.html'
-    # a, b, a_err, b_err = vals5; save_fname = 'fit_v5_comparison.html'
-    a, b, a_err, b_err = vals6; save_fname = 'fit_v6_comparison.html'
-
-    rg = np.sqrt(-3 * a)
-    rg_err = -3 / (2 * rg) * a_err
-
-    i0 = np.exp(b)
-    i0_err = i0 * b_err
-
-    if view_fit:
-        import make_figures
-        q2 = np.insert(q2, 0, 0.0)
-        log_iq = np.insert(log_iq, 0, b)
-        dlog_iq = np.insert(dlog_iq, 0, b_err)
-
-        y_fit = a * q2 + b
-        make_figures.plot_fit(q2, log_iq, y_fit, yerr=dlog_iq,
-                              save_fname=save_fname)
-
-    return i0, rg, i0_err, rg_err
-
-
 def fit_line_v0(x, y, dy):
     '''
     Fit data for y = ax + b
@@ -267,14 +217,14 @@ def fit_line_v6(x, y, dy):
 
     !!! This has a bug !!!
     '''
-    x = x / dy ** 2
-    y = y / dy ** 2
-
     n = len(x)
-    sum_xy = (x * y).sum()
-    sum_x = x.sum()
-    sum_y = y.sum()
-    sum_x2 = (x ** 2).sum()
+    x_w = x / dy ** 2  # weighted x
+    y_w = y / dy ** 2  # weighted y
+
+    sum_xy = (x_w * y_w).sum()
+    sum_x = x_w.sum()
+    sum_y = y_w.sum()
+    sum_x2 = (x_w ** 2).sum()
     sum2_x = sum_x ** 2
 
     den = n * sum_x2 - sum2_x
@@ -298,6 +248,66 @@ def fit_line_v6(x, y, dy):
     return a, b, a_err, b_err
 
 
+def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
+                fit_method=fit_line_v5, save_fname='guiner_fit.html'):
+    '''
+    perform Guinier fit
+    return I(0) and Rg
+    '''
+
+    # Identify the range for the fit
+    id_x = (q >= q_min) & (q <= q_max)
+
+    q2 = q[id_x] ** 2
+    log_iq = np.log(iq[id_x])
+    dlog_iq = iq[id_x] / diq[id_x]
+    if dq is not None:
+        dq2 = 2 * q[id_x] * dq[id_x]
+
+    a, b, a_err, b_err = fit_method(q2, log_iq, dlog_iq)
+
+    rg = np.sqrt(-3 * a)
+    rg_err = -3 / (2 * rg) * a_err
+
+    i0 = np.exp(b)
+    i0_err = i0 * b_err
+
+    if view_fit:
+        import make_figures
+        q2 = np.insert(q2, 0, 0.0)
+        log_iq = np.insert(log_iq, 0, b)
+        dlog_iq = np.insert(dlog_iq, 0, b_err)
+
+        y_fit = a * q2 + b
+        make_figures.plot_fit(q2, log_iq, y_fit, yerr=dlog_iq,
+                              save_fname=save_fname)
+
+    return i0, rg, i0_err, rg_err
+
+
+def compare_guinier_fit(q, iq, diq, **args):
+    '''
+    perform Guinier fit
+    return I(0) and Rg
+    '''
+
+    fit_methods = [
+        fit_line_v0,
+        fit_line_v1,
+        fit_line_v2,
+        fit_line_v3,
+        fit_line_v4,
+        fit_line_v5,
+        fit_line_v6,
+    ]
+
+    for fit_method in fit_methods:
+        save_fname = 'fit_{}_comparison.html'.format(fit_method.func_name[-2:])
+        i0, rg, i0_err, rg_err = guinier_fit(q, iq, diq, fit_method=fit_method,
+                                             save_fname=save_fname,
+                                             view_fit=True, **args)
+
+
 def covariance(x, y):
     assert len(x) == len(y)
 
@@ -319,13 +329,10 @@ if __name__ == '__main__':
     assert os.path.exists(data_fname)
     data = np.asfortranarray(np.loadtxt(data_fname, skiprows=skiprows))
 
-    # x = data[:, 0] ** 2
-    # y = np.log(data[:, 1])
-    # dy = data[:, 2] / data[:, 1]  # d(log(I(q))) = dI(q) / I(q)
-    # dx = 2 * data[:, 0] * data[:, 3]  # d(q**2) = 2 q dq
+    # compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2])
 
-    i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1],
-                                         diq=data[:,2], dq=data[:, 3],
-                                         q_max=0.07, view_fit=True)
+    i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1], data[:,2],
+                                         dq=data[:, 3], q_max=0.07,
+                                         view_fit=True, method=fit_line_v6)
 
     logging.debug('\m/ >.< \m/')
