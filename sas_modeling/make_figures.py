@@ -8,6 +8,7 @@
 00000000011111111112222222222333333333344444444445555555555666666666677777777778
 12345678901234567890123456789012345678901234567890123456789012345678901234567890
 """
+import os
 
 from bokeh.plotting import figure, output_file, show
 from bokeh.palettes import Colorblind8 as palette
@@ -44,7 +45,7 @@ def plot_fit(x, y, y_fit, xerr=None, yerr=None,
     output_file(save_fname)
 
 
-    p = figure(title="some title", x_axis_label='q (1/A)',
+    p = figure(title=os.path.split(save_fname)[0], x_axis_label='q (1/A)',
                y_axis_label='I(q)')
 
     p.line(x, y_fit, color=palette[0], legend="fit", line_width=2)

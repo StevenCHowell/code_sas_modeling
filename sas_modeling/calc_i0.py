@@ -36,16 +36,16 @@ def guinier_fit(q, iq, diq=None, dq=None, q_min=0.0, q_max=0.1, view_fit=False):
     # vals2 = fit_line_v2(q2, log_iq, dlog_iq)
     # vals3 = fit_line_v3(q2, log_iq, dlog_iq)
     # vals4 = fit_line_v4(q2, log_iq, dlog_iq)
-    # vals5 = fit_line_v5(q2, log_iq, dlog_iq)
+    # vals5 = fit_line_v5(q2, log_iq, dlog_iq)  # seems reasonable
     vals6 = fit_line_v6(q2, log_iq, dlog_iq)
 
-    a, b, a_err, b_err = vals6; save_fname = 'fit_v6_comparison.html'
-    # a, b, a_err, b_err = vals5; save_fname = 'fit_v5_comparison.html'
-    # a, b, a_err, b_err = vals4; save_fname = 'fit_v4_comparison.html'
-    # a, b, a_err, b_err = vals3; save_fname = 'fit_v3_comparison.html'
-    # a, b, a_err, b_err = vals2; save_fname = 'fit_v2_comparison.html'
-    # a, b, a_err, b_err = vals1; save_fname = 'fit_v1_comparison.html'
     # a, b, a_err, b_err = vals0; save_fname = 'fit_v0_comparison.html'
+    # a, b, a_err, b_err = vals1; save_fname = 'fit_v1_comparison.html'
+    # a, b, a_err, b_err = vals2; save_fname = 'fit_v2_comparison.html'
+    # a, b, a_err, b_err = vals3; save_fname = 'fit_v3_comparison.html'
+    # a, b, a_err, b_err = vals4; save_fname = 'fit_v4_comparison.html'
+    # a, b, a_err, b_err = vals5; save_fname = 'fit_v5_comparison.html'
+    a, b, a_err, b_err = vals6; save_fname = 'fit_v6_comparison.html'
 
     rg = np.sqrt(-3 * a)
     rg_err = -3 / (2 * rg) * a_err
@@ -72,7 +72,7 @@ def fit_line_v0(x, y, dy):
     return a and b
     essentially the same results as fit_line_v2
 
-    resulting error seems reasonable compared to input data
+    error estimate seems reasonable compared to input data
     '''
 
     # define our (line) fitting function
@@ -229,31 +229,31 @@ def fit_line_v5(x, y, dy):
     method taken from wikipedia:
     https://en.wikipedia.org/wiki/Linear_least_squares_(mathematics)#Python
 
-    not sure how to get M
+    error estimate seems reasonable comared to input data
     '''
 
     m = len(x)
     X = np.array([x, np.ones(m)]).T
     Y = np.array(y).reshape(-1, 1)
-    W = np.eye(m) * dy
+    W = np.eye(m) / dy ** 2
 
     # calculate the parameters
     xtwx_inv = np.linalg.inv(X.T.dot(W).dot(X))
     a, b = xtwx_inv.dot(X.T).dot(W).dot(Y)
 
     # calculate the error of the parameters:
-
     # (X.T * W * X)^-1 * X.T * W * M * W.T * X * (X.T * W.T * X)^-1
-    cov_xy = covariance(x, y)
-    var_x = covariance(x, x)
-    var_y = covariance(y, y)
+    # cov_xy = covariance(x, y)
+    # var_x = covariance(x, x)
+    # var_y = covariance(y, y)
+    # M = np.eye(m) * dy ** 2
 
-    xtwtx_inv = np.linalg.inv(X.T.dot(W.T).dot(X))
-    M_beta = xtwx_inv.dot(X.T).dot(W).M.dot(W.T).dot(x).dot(xtwtx_inv)
+    # xtwtx_inv = np.linalg.inv(X.T.dot(W.T).dot(X))
+    # M_beta = xtwx_inv.dot(X.T).dot(W).dot(M).dot(W.T).dot(X).dot(xtwtx_inv)
+    # M_beta = xtwx_inv  # because M = W^-1
 
-    # using assumption that: M = W^-1
-    # cov = xtwx_inv
-    # a_err, b_err = np.sqrt(np.diag(cov))
+    cov = xtwx_inv
+    a_err, b_err = np.sqrt(np.diag(cov))
 
     return a, b, a_err, b_err
 
@@ -263,10 +263,12 @@ def fit_line_v6(x, y, dy):
     Fit data for y = ax + b
     return a and b
     method taken from Experimentation by Baird: pg 138-140
-    The dy's in the derivation are not the same as the error of
+    The dy's in the derivation are not the same as the error of the y values
+
+    !!! This has a bug !!!
     '''
-    x = x / dy
-    y = y / dy
+    x = x / dy ** 2
+    y = y / dy ** 2
 
     n = len(x)
     sum_xy = (x * y).sum()
