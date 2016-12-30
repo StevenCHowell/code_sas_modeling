@@ -20,8 +20,8 @@ def fit_line_v0(x, y, dy):
     '''
     Fit data for y = ax + b
     return a and b
-    essentially the same results as fit_line_v2
 
+    http://scipy-cookbook.readthedocs.io/items/FittingData.html#id2
     error estimate seems reasonable compared to input data
     '''
 
@@ -266,6 +266,14 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
     i0 = np.exp(b)
     i0_err = i0 * b_err
 
+    rg_q_max = 1.3 / rg
+    if rg_q_max < q[id_x][-1]:
+        logging.warning('initial q-max too high, 1.3/Rg={}'.format(rg_q_max))
+        logging.warning('repeating fit with q-max={}'.format(rg_q_max))
+        return guinier_fit(q, iq, diq, dq=dq, q_min=q_min, q_max=rg_q_max,
+                           view_fit=view_fit, fit_method=fit_method,
+                           save_fname=save_fname)
+
     if view_fit:
         import make_figures
         q2 = np.insert(q2, 0, 0.0)
@@ -323,7 +331,7 @@ if __name__ == '__main__':
     assert os.path.exists(data_fname)
     data = np.asfortranarray(np.loadtxt(data_fname, skiprows=skiprows))
 
-    compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2])
+    compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2], q_max=0.091)
 
     # i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1], data[:,2],
                                          # dq=data[:, 3], q_max=0.07,
