@@ -146,8 +146,7 @@ def fit_line_v3(x, y, dy):
     inv_cov = np.dot(A.transpose(), A)
     cov = np.linalg.pinv(inv_cov)
     err_matrix = np.abs(residuals) * cov
-    a_err = np.sqrt(err_matrix[0][0])
-    b_err = np.sqrt(err_matrix[1][1])
+    a_err, b_err = np.sqrt(np.diag(err_matrix))
 
     return a, b, a_err, b_err
 
@@ -185,11 +184,11 @@ def fit_line_v5(x, y, dy):
     m = len(x)
     X = np.array([x, np.ones(m)]).T
     Y = np.array(y).reshape(-1, 1)
-    W = np.eye(m) / dy  #** 2
+    W = np.eye(m) / dy ** 2
 
     # calculate the parameters
     xtwx_inv = np.linalg.inv(X.T.dot(W).dot(X))
-    a, b = xtwx_inv.dot(X.T).dot(W).dot(Y)
+    a, b = xtwx_inv.dot(X.T).dot(W).dot(Y).reshape(2)
 
     # calculate the error of the parameters:
     # (X.T * W * X)^-1 * X.T * W * M * W.T * X * (X.T * W.T * X)^-1

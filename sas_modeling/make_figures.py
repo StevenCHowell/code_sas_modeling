@@ -46,18 +46,19 @@ def plot_guinier_fit(x, y, y_fit, i0, i0_err, rg, rg_err, xerr=None, yerr=None,
     '''
 
     output_file(save_fname)
+    n_round = 6
 
-    i0 = round_to_n(i0, n=3)
-    rg = round_to_n(rg, n=3)
+    i0 = round_to_n(i0, n=n_round)
+    rg = round_to_n(rg, n=n_round)
     if i0_err == 0:
         i0_err = 'NA'
     else:
-        i0_err = round_to_n(i0_err, n=3)
+        i0_err = round_to_n(i0_err, n=n_round)
 
     if rg_err == 0:
         rg_err = 'NA'
     else:
-        rg_err = round_to_n(rg_err, n=3)
+        rg_err = round_to_n(rg_err, n=n_round)
 
 
     title = '{}, I(0) = {}+/-{}, Rg = {}+/-{}'.format(save_fname.split('.')[0],
