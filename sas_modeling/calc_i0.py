@@ -185,7 +185,7 @@ def fit_line_v5(x, y, dy):
     m = len(x)
     X = np.array([x, np.ones(m)]).T
     Y = np.array(y).reshape(-1, 1)
-    W = np.eye(m) / dy ** 2
+    W = np.eye(m) / dy  #** 2
 
     # calculate the parameters
     xtwx_inv = np.linalg.inv(X.T.dot(W).dot(X))
@@ -214,35 +214,30 @@ def fit_line_v6(x, y, dy):
     return a and b
     method taken from Experimentation by Baird: pg 138-140
     The dy's in the derivation are not the same as the error of the y values
-
-    !!! This has a bug !!!
     '''
-    n = len(x)
-    x_w = x / dy ** 2  # weighted x
-    y_w = y / dy ** 2  # weighted y
+    wx = x / dy
+    wy = y / dy
 
-    sum_xy = (x_w * y_w).sum()
-    sum_x = x_w.sum()
-    sum_y = y_w.sum()
-    sum_x2 = (x_w ** 2).sum()
-    sum2_x = sum_x ** 2
+    sum_xy = np.sum(wx * wy)
+    sum_x = np.sum(wx)
+    sum_y = np.sum(wy)
+    sum_x_dy_inv = np.sum(wx / dy)
+    sum_dy_inv = np.sum(1 / dy)
+    sum_x2 = np.sum(wx ** 2)
 
-    den = n * sum_x2 - sum2_x
+    den = sum_dy_inv * sum_x2 - sum_x * sum_x_dy_inv
 
-    a_num = n * sum_xy - sum_x * sum_y
+    a_num = sum_dy_inv * sum_xy - sum_x_dy_inv * sum_y
     a = a_num / den
 
     b_num = sum_x2 * sum_y - sum_x * sum_xy
     b = b_num / den
 
+    n = len(x)
     y_fit = a * x + b
-
     delta_y = y - y_fit
-
     y_err = np.sqrt(np.sum(delta_y ** 2) / (n - 2))
-
     a_err = y_err * np.sqrt(n / den)
-
     b_err = y_err * np.sqrt(sum_x2 / den)
 
     return a, b, a_err, b_err
@@ -267,7 +262,7 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
     a, b, a_err, b_err = fit_method(q2, log_iq, dlog_iq)
 
     rg = np.sqrt(-3 * a)
-    rg_err = -3 / (2 * rg) * a_err
+    rg_err = 3 / (2 * rg) * a_err
 
     i0 = np.exp(b)
     i0_err = i0 * b_err
@@ -279,8 +274,8 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
         dlog_iq = np.insert(dlog_iq, 0, b_err)
 
         y_fit = a * q2 + b
-        make_figures.plot_fit(q2, log_iq, y_fit, yerr=dlog_iq,
-                              save_fname=save_fname)
+        make_figures.plot_guinier_fit(q2, log_iq, y_fit, i0, i0_err, rg, rg_err,
+                                      yerr=dlog_iq, save_fname=save_fname)
 
     return i0, rg, i0_err, rg_err
 
@@ -324,15 +319,15 @@ if __name__ == '__main__':
     import os
     import make_figures
 
-    data_fname = 'dev/1mgml_LysoSANS.sub'; skiprows = 1
+    data_fname = 'data/1mgml_LysoSANS.sub'; skiprows = 1
     # data_fname = 'exp_data_lysozyme.dat'; skiprows = 0
     assert os.path.exists(data_fname)
     data = np.asfortranarray(np.loadtxt(data_fname, skiprows=skiprows))
 
-    # compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2])
+    compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2])
 
-    i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1], data[:,2],
-                                         dq=data[:, 3], q_max=0.07,
-                                         view_fit=True, method=fit_line_v6)
+    # i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1], data[:,2],
+                                         # dq=data[:, 3], q_max=0.07,
+                                         # view_fit=True, fit_method=fit_line_v6)
 
     logging.debug('\m/ >.< \m/')

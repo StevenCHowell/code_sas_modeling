@@ -8,7 +8,7 @@
 00000000011111111112222222222333333333344444444445555555555666666666677777777778
 12345678901234567890123456789012345678901234567890123456789012345678901234567890
 """
-import os
+import numpy as np
 
 from bokeh.plotting import figure, output_file, show
 from bokeh.palettes import Colorblind8 as palette
@@ -36,17 +36,33 @@ def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
         fig.multi_line(y_err_x, y_err_y, color=color, **error_kwargs)
 
 
-def plot_fit(x, y, y_fit, xerr=None, yerr=None,
-             save_fname='fit_comparison.html'):
+def round_to_n(x, n=3):
+    return round(x, -int(np.floor(np.log10(x))) + (n - 1))
+
+def plot_guinier_fit(x, y, y_fit, i0, i0_err, rg, rg_err, xerr=None, yerr=None,
+                     save_fname='fit_comparison.html'):
     '''
     plot data and a fit line
     '''
 
     output_file(save_fname)
 
+    i0 = round_to_n(i0, n=3)
+    rg = round_to_n(rg, n=3)
+    if i0_err == 0:
+        i0_err = 'NA'
+    else:
+        i0_err = round_to_n(i0_err, n=3)
 
-    p = figure(title=os.path.split(save_fname)[0], x_axis_label='q (1/A)',
-               y_axis_label='I(q)')
+    if rg_err == 0:
+        rg_err = 'NA'
+    else:
+        rg_err = round_to_n(rg_err, n=3)
+
+
+    title = '{}, I(0) = {}+/-{}, Rg = {}+/-{}'.format(save_fname.split('.')[0],
+                                                      i0, i0_err, rg, rg_err)
+    p = figure(title=title, x_axis_label='q (1/A)', y_axis_label='I(q)')
 
     p.line(x, y_fit, color=palette[0], legend="fit", line_width=2)
 
