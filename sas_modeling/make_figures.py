@@ -63,7 +63,7 @@ def plot_guinier_fit(x, y, y_fit, i0, i0_err, rg, rg_err, xerr=None, yerr=None,
 
     title = '{}, I(0) = {}+/-{}, Rg = {}+/-{}'.format(save_fname.split('.')[0],
                                                       i0, i0_err, rg, rg_err)
-    p = figure(title=title, x_axis_label='q (1/A)', y_axis_label='I(q)')
+    p = figure(title=title, x_axis_label='q^2 (1/A^2)', y_axis_label='ln(I(q))')
 
     p.line(x, y_fit, color=palette[0], legend="fit", line_width=2)
 
