@@ -24,16 +24,18 @@ def fit_line_v0(x, y, dy):
     http://scipy-cookbook.readthedocs.io/items/FittingData.html#id2
     error estimate seems reasonable compared to input data
     '''
+    var = dy ** 2  # weight each row by the variance, dy is standard deviation
 
     # define our (line) fitting function
     fitfunc = lambda p, x: p[0] * x + p[1]
-    errfunc = lambda p, x, y, yerr: (y - fitfunc(p, x)) / yerr
+    errfunc = lambda p, x, y, var: (y - fitfunc(p, x)) / var
 
     # use the last two points to guess the initial values
-    a_guess = (y[-2] - y[-1]) / (x[-2] - x[-1])
-    b_guess = y[-1] - a_guess * x[-1]
+    a_guess = (y[-2] - y[-1]) / (x[-2] - x[-1])  # guess the slope from 2 points
+    b_guess = y[-1] - a_guess * x[-1]  # gues the y-intercept from 2 points
     p_guess = [a_guess, b_guess]
-    out = optimize.leastsq(errfunc, p_guess, args=(x, y, dy), full_output=1)
+
+    out = optimize.leastsq(errfunc, p_guess, args=(x, y, var), full_output=1)
 
     p_final = out[0]
     a = p_final[0]
@@ -73,9 +75,10 @@ def fit_line_v1(x, y, dy):
 
     no error estimate
     '''
+    var = dy ** 2  # variance, when dy is the standard deviation
 
-    A = np.vstack([x / dy, 1.0 / dy]).T  # weight each row by 1 / dy
-    p, residuals, _, _ = np.linalg.lstsq(A, y / dy)
+    A = np.vstack([x / var, 1.0 / var]).T
+    p, residuals, _, _ = np.linalg.lstsq(A, y / var)
 
     a = p[0]
     b = p[1]
@@ -104,8 +107,9 @@ def fit_line_v2(x, y, dy):
 
     no error estimate
     '''
+    var = dy ** 2  # variance, when dy is the standard deviation
 
-    out = np.polynomial.polynomial.polyfit(x, y, 1, w=1/dy, full=True)
+    out = np.polynomial.polynomial.polyfit(x, y, 1, w=1/var, full=True)
     # does not provide the covariance matrix, not sure how to extract error
 
     p_final = out[0]
@@ -158,8 +162,9 @@ def fit_line_v4(x, y, dy):
 
     error estimate seems much too small
     '''
+    var = dy ** 2  # variance, when dy is the standard deviation
 
-    p, cov = np.polyfit(x, y, 1, w=1/dy, cov=True)
+    p, cov = np.polyfit(x, y, 1, w=1/var, cov=True)
 
     a, b = p
 
@@ -180,11 +185,12 @@ def fit_line_v5(x, y, dy):
 
     error estimate seems reasonable comared to input data
     '''
+    var = dy ** 2  # variance, when dy is the standard deviation
 
     m = len(x)
     X = np.array([x, np.ones(m)]).T
     Y = np.array(y).reshape(-1, 1)
-    W = np.eye(m) / dy ** 2
+    W = np.eye(m) / var  # weight using the inverse of the variance
 
     # calculate the parameters
     xtwx_inv = np.linalg.inv(X.T.dot(W).dot(X))
@@ -214,14 +220,16 @@ def fit_line_v6(x, y, dy):
     method taken from Experimentation by Baird: pg 138-140
     The dy's in the derivation are not the same as the error of the y values
     '''
-    wx = x / dy
-    wy = y / dy
+    var = dy ** 2  # variance, when dy is the standard deviation
+
+    wx = x / var
+    wy = y / var
 
     sum_xy = np.sum(wx * wy)
     sum_x = np.sum(wx)
     sum_y = np.sum(wy)
-    sum_x_dy_inv = np.sum(wx / dy)
-    sum_dy_inv = np.sum(1 / dy)
+    sum_x_dy_inv = np.sum(wx / var)
+    sum_dy_inv = np.sum(1 / var)
     sum_x2 = np.sum(wx ** 2)
 
     den = sum_dy_inv * sum_x2 - sum_x * sum_x_dy_inv
@@ -254,7 +262,7 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
 
     q2 = q[id_x] ** 2
     log_iq = np.log(iq[id_x])
-    dlog_iq = iq[id_x] / diq[id_x]
+    dlog_iq = diq[id_x] / iq[id_x]
     if dq is not None:
         dq2 = 2 * q[id_x] * dq[id_x]
 
@@ -282,7 +290,7 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
 
         y_fit = a * q2 + b
         make_figures.plot_guinier_fit(q2, log_iq, y_fit, i0, i0_err, rg, rg_err,
-                                      yerr=dlog_iq, save_fname=save_fname)
+                                      dlog_iq, save_fname=save_fname)
 
     return i0, rg, i0_err, rg_err
 
@@ -330,6 +338,17 @@ if __name__ == '__main__':
     # data_fname = 'exp_data_lysozyme.dat'; skiprows = 0
     assert os.path.exists(data_fname)
     data = np.asfortranarray(np.loadtxt(data_fname, skiprows=skiprows))
+
+    if True:
+        make_figures.plot_iq_and_guinier(data[:, 0], data[:, 1], data[:, 2],
+                                        save_fname='I(q)_and_guinier-no_scale.html')
+
+
+    # scale the data
+    # data[:, 1:3] *= 1 / data[0, 1]  # set the first measured point to 1
+    # data[:, 1:3] *= 10 / data[0, 1]  # set the first measured point to 10
+    # data[:, 1:3] *= 100 / data[0, 1]  # set the first measured point to 100
+    # data[:, 1:3] *= 1000 / data[0, 1]  # set the first measured point to 1000
 
     compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2], q_max=0.091)
 
