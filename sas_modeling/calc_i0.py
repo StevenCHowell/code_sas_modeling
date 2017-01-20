@@ -24,18 +24,18 @@ def fit_line_v0(x, y, dy):
     http://scipy-cookbook.readthedocs.io/items/FittingData.html#id2
     error estimate seems reasonable compared to input data
     '''
-    var = dy ** 2  # weight each row by the variance, dy is standard deviation
+    w = 1 / dy
 
     # define our (line) fitting function
     fitfunc = lambda p, x: p[0] * x + p[1]
-    errfunc = lambda p, x, y, var: (y - fitfunc(p, x)) / var
+    errfunc = lambda p, x, y, w: (y - fitfunc(p, x)) * w
 
     # use the last two points to guess the initial values
     a_guess = (y[-2] - y[-1]) / (x[-2] - x[-1])  # guess the slope from 2 points
     b_guess = y[-1] - a_guess * x[-1]  # gues the y-intercept from 2 points
     p_guess = [a_guess, b_guess]
 
-    out = optimize.leastsq(errfunc, p_guess, args=(x, y, var), full_output=1)
+    out = optimize.leastsq(errfunc, p_guess, args=(x, y, w), full_output=1)
 
     p_final = out[0]
     a = p_final[0]
@@ -73,12 +73,12 @@ def fit_line_v1(x, y, dy):
     Fit data for y = ax + b
     return a and b
 
-    no error estimate
+    no error estimates
     '''
-    var = dy ** 2  # variance, when dy is the standard deviation
+    w = 1/ dy ** 2
 
-    A = np.vstack([x / var, 1.0 / var]).T
-    p, residuals, _, _ = np.linalg.lstsq(A, y / var)
+    A = np.vstack([x * w, 1.0 * w]).T
+    p, residuals, _, _ = np.linalg.lstsq(A, y * w)
 
     a = p[0]
     b = p[1]
@@ -105,11 +105,11 @@ def fit_line_v2(x, y, dy):
     return a and b
     essentially the same results as fit_line_v0
 
-    no error estimate
+    no error estimates
     '''
-    var = dy ** 2  # variance, when dy is the standard deviation
+    w = 1 / dy ** 2
 
-    out = np.polynomial.polynomial.polyfit(x, y, 1, w=1/var, full=True)
+    out = np.polynomial.polynomial.polyfit(x, y, 1, w=w, full=True)
     # does not provide the covariance matrix, not sure how to extract error
 
     p_final = out[0]
@@ -138,7 +138,7 @@ def fit_line_v3(x, y, dy):
     method taken from SasView:
     github.com/SasView/sasview/blob/master/src/sas/sascalc/invariant/invariant.py
 
-    error estimate seems much too small
+    error estimate seems reasonable
     '''
     A = np.vstack([x / dy, 1.0 / dy]).T
     p, residuals, _, _ = np.linalg.lstsq(A, y / dy)
@@ -162,9 +162,9 @@ def fit_line_v4(x, y, dy):
 
     error estimate seems much too small
     '''
-    var = dy ** 2  # variance, when dy is the standard deviation
+    w = 1 / dy ** 2
 
-    p, cov = np.polyfit(x, y, 1, w=1/var, cov=True)
+    p, cov = np.polyfit(x, y, 1, w=w, cov=True)
 
     a, b = p
 
@@ -184,13 +184,14 @@ def fit_line_v5(x, y, dy):
     https://en.wikipedia.org/wiki/Linear_least_squares_(mathematics)#Python
 
     error estimate seems reasonable comared to input data
+    This result is identical to v0 and v7
     '''
-    var = dy ** 2  # variance, when dy is the standard deviation
+    w = 1 / dy ** 2
 
-    m = len(x)
-    X = np.array([x, np.ones(m)]).T
+    n = len(x)
+    X = np.array([x, np.ones(n)]).T
     Y = np.array(y).reshape(-1, 1)
-    W = np.eye(m) / var  # weight using the inverse of the variance
+    W = np.eye(n) * w  # weight using the inverse of the variance
 
     # calculate the parameters
     xtwx_inv = np.linalg.inv(X.T.dot(W).dot(X))
@@ -217,8 +218,9 @@ def fit_line_v6(x, y, dy):
     '''
     Fit data for y = ax + b
     return a and b
-    method taken from Experimentation by Baird: pg 138-140
+    method taken from Baird's "Experimentation": pg 138-140
     The dy's in the derivation are not the same as the error of the y values
+    This method does not propagate the error
     '''
     var = dy ** 2  # variance, when dy is the standard deviation
 
@@ -246,6 +248,34 @@ def fit_line_v6(x, y, dy):
     y_err = np.sqrt(np.sum(delta_y ** 2) / (n - 2))
     a_err = y_err * np.sqrt(n / den)
     b_err = y_err * np.sqrt(sum_x2 / den)
+
+    return a, b, a_err, b_err
+
+
+def fit_line_v7(x, y, dy):
+    '''
+    Fit data for y = ax + b
+    return a and b
+    from Huges & Hase "Measurements and their Uncertainties", pg 69-70
+    '''
+    w = 1 / dy ** 2  # vweight is the inverse square of the uncertainty
+
+    sum_w = np.sum(w)
+    sum_wx = np.sum(w * x)
+    sum_wy = np.sum(w * y)
+    sum_wx2 = np.sum(w * x **2)
+    sum_wxy = np.sum(w * x * y)
+
+    den = sum_w * sum_wx2 - sum_wx ** 2
+
+    a_num = sum_w * sum_wxy - sum_wx * sum_wy
+    a = a_num / den
+
+    b_num = sum_wx2 * sum_wy - sum_wx * sum_wxy
+    b = b_num / den
+
+    a_err = np.sqrt(sum_w / den)
+    b_err = np.sqrt(sum_wx2 / den)
 
     return a, b, a_err, b_err
 
@@ -309,10 +339,12 @@ def compare_guinier_fit(q, iq, diq, **args):
         fit_line_v4,
         fit_line_v5,
         fit_line_v6,
+        fit_line_v7,
     ]
 
     for fit_method in fit_methods:
-        save_fname = 'fit_{}_comparison.html'.format(fit_method.func_name[-2:])
+        save_fname = 'fit_{}_comparison.html'.format(fit_method.__name__[-2:])
+        # save_fname = 'fit_{}_comparison.html'.format(fit_method.func_name[-2:])
         i0, rg, i0_err, rg_err = guinier_fit(q, iq, diq, fit_method=fit_method,
                                              save_fname=save_fname,
                                              view_fit=True, **args)
