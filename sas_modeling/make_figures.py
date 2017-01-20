@@ -94,20 +94,22 @@ def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
 
     x = q ** 2
     y = np.log(iq)
-    dy = diq / iq
 
     p2 = figure(title='Guinier', x_axis_label='q^2 (1/A^2)',
                y_axis_label='ln(I(q))')
+
+    dy_skew = (np.log(iq + diq) - np.log(iq - diq)) / 2.0
+    # p3 = figure(title='Guinier (skewed errorbars)', x_axis_label='q^2 (1/A^2)',
+                # y_axis_label='ln(I(q))', x_range=p2.x_range,
+                # y_range=p2.y_range)
+    errorbar(p2, x, y, yerr=dy_skew, color=palette[0],
+             point_kwargs={'legend': 'log(iq +/- averaged diq)'})
+
+    dy = diq / iq
     errorbar(p2, x, y, yerr=dy, color=palette[1],
              point_kwargs={'legend': 'log(iq +/- diq)'})
 
 
-    dy = (np.log(iq + diq) - np.log(iq - diq)) / 2.0
-    # p3 = figure(title='Guinier (skewed errorbars)', x_axis_label='q^2 (1/A^2)',
-               # y_axis_label='ln(I(q))', x_range=p2.x_range,
-                # y_range=p2.y_range)
-    errorbar(p2, x, y, yerr=dy, color=palette[0],
-             point_kwargs={'legend': 'log(iq +/- diq)'})
 
     r0 = [p0, p1]
     r1 = [p2]  #, p3]
