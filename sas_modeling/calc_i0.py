@@ -18,8 +18,8 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 def fit_line_v0(x, y, dy):
     '''
-    Fit data for y = ax + b
-    return a and b
+    Fit data for y = mx + b
+    return m and b
 
     http://scipy-cookbook.readthedocs.io/items/FittingData.html#id2
     error estimate seems reasonable compared to input data
@@ -31,14 +31,14 @@ def fit_line_v0(x, y, dy):
     errfunc = lambda p, x, y, w: (y - fitfunc(p, x)) * w
 
     # use the last two points to guess the initial values
-    a_guess = (y[-2] - y[-1]) / (x[-2] - x[-1])  # guess the slope from 2 points
-    b_guess = y[-1] - a_guess * x[-1]  # gues the y-intercept from 2 points
-    p_guess = [a_guess, b_guess]
+    m_guess = (y[-2] - y[-1]) / (x[-2] - x[-1])  # guess the slope from 2 points
+    b_guess = y[-1] - m_guess * x[-1]  # gues the y-intercept from 2 points
+    p_guess = [m_guess, b_guess]
 
     out = optimize.leastsq(errfunc, p_guess, args=(x, y, w), full_output=1)
 
     p_final = out[0]
-    a = p_final[0]
+    m = p_final[0]
     b = p_final[1]
 
     # from the docs page:
@@ -62,16 +62,16 @@ def fit_line_v0(x, y, dy):
     #   hand ‘trf’ and ‘dogbox’ methods use Moore-Penrose pseudoinverse to
     #   compute the covariance matrix.
     cov = out[1]
-    a_err = np.sqrt( cov[0, 0] )
+    m_err = np.sqrt( cov[0, 0] )
     b_err = np.sqrt( cov[1, 1] )
 
-    return a, b, a_err, b_err
+    return m, b, m_err, b_err
 
 
 def fit_line_v1(x, y, dy):
     '''
-    Fit data for y = ax + b
-    return a and b
+    Fit data for y = mx + b
+    return m and b
 
     no error estimates
     '''
@@ -80,7 +80,7 @@ def fit_line_v1(x, y, dy):
     A = np.vstack([x * w, 1.0 * w]).T
     p, residuals, _, _ = np.linalg.lstsq(A, y * w)
 
-    a = p[0]
+    m = p[0]
     b = p[1]
 
     # from the docs page:
@@ -93,16 +93,16 @@ def fit_line_v1(x, y, dy):
     # s : (min(M, N),) ndarray
     #   Singular values of a.
 
-    a_err = 0.0
+    m_err = 0.0
     b_err = 0.0
 
-    return a, b, a_err, b_err
+    return m, b, m_err, b_err
 
 
 def fit_line_v2(x, y, dy):
     '''
-    Fit data for y = ax + b
-    return a and b
+    Fit data for y = mx + b
+    return m and b
     essentially the same results as fit_line_v0
 
     no error estimates
@@ -113,7 +113,7 @@ def fit_line_v2(x, y, dy):
     # does not provide the covariance matrix, not sure how to extract error
 
     p_final = out[0]
-    a = p_final[1]
+    m = p_final[1]
     b = p_final[0]
 
     # from the docs page:
@@ -126,15 +126,15 @@ def fit_line_v2(x, y, dy):
     # For more details, see linalg.lstsq.
 
     b_err = 0.0
-    a_err = 0.0
+    m_err = 0.0
 
-    return a, b, a_err, b_err
+    return m, b, m_err, b_err
 
 
 def fit_line_v3(x, y, dy):
     '''
-    Fit data for y = ax + b
-    return a and b
+    Fit data for y = mx + b
+    return m and b
     method taken from SasView:
     github.com/SasView/sasview/blob/master/src/sas/sascalc/invariant/invariant.py
 
@@ -143,22 +143,22 @@ def fit_line_v3(x, y, dy):
     A = np.vstack([x / dy, 1.0 / dy]).T
     p, residuals, _, _ = np.linalg.lstsq(A, y / dy)
 
-    a = p[0]
+    m = p[0]
     b = p[1]
 
     # Get the covariance matrix, defined as inv_cov = a_transposed * a
     inv_cov = np.dot(A.transpose(), A)
     cov = np.linalg.pinv(inv_cov)
     err_matrix = np.abs(residuals) * cov
-    a_err, b_err = np.sqrt(np.diag(err_matrix))
+    m_err, b_err = np.sqrt(np.diag(err_matrix))
 
-    return a, b, a_err, b_err
+    return m, b, m_err, b_err
 
 
 def fit_line_v4(x, y, dy):
     '''
-    Fit data for y = ax + b
-    return a and b
+    Fit data for y = mx + b
+    return m and b
 
     error estimate seems much too small
     '''
@@ -166,20 +166,21 @@ def fit_line_v4(x, y, dy):
 
     p, cov = np.polyfit(x, y, 1, w=w, cov=True)
 
-    a, b = p
+    m, b = p
 
     # From docs page:
     # The diagonal of this matrix (cov) are the
     # variance estimates for each coefficient.
-    a_err, b_err = np.sqrt(np.diag(cov))  # standard devaitions
+    m_err, b_err = np.sqrt(np.diag(cov))  # standard devaitions
+    # m_err, b_err = np.diag(cov)
 
-    return a, b, a_err, b_err
+    return m, b, m_err, b_err
 
 
 def fit_line_v5(x, y, dy):
     '''
-    Fit data for y = ax + b
-    return a and b
+    Fit data for y = mx + b
+    return m and b
     method taken from wikipedia:
     https://en.wikipedia.org/wiki/Linear_least_squares_(mathematics)#Python
 
@@ -195,7 +196,7 @@ def fit_line_v5(x, y, dy):
 
     # calculate the parameters
     xtwx_inv = np.linalg.inv(X.T.dot(W).dot(X))
-    a, b = xtwx_inv.dot(X.T).dot(W).dot(Y).reshape(2)
+    m, b = xtwx_inv.dot(X.T).dot(W).dot(Y).reshape(2)
 
     # calculate the error of the parameters:
     # (X.T * W * X)^-1 * X.T * W * M * W.T * X * (X.T * W.T * X)^-1
@@ -209,15 +210,15 @@ def fit_line_v5(x, y, dy):
     # M_beta = xtwx_inv  # because M = W^-1
 
     cov = xtwx_inv
-    a_err, b_err = np.sqrt(np.diag(cov))
+    m_err, b_err = np.sqrt(np.diag(cov))
 
-    return a, b, a_err, b_err
+    return m, b, m_err, b_err
 
 
 def fit_line_v6(x, y, dy):
     '''
-    Fit data for y = ax + b
-    return a and b
+    Fit data for y = mx + b
+    return m and b
     method taken from Baird's "Experimentation": pg 138-140
     The dy's in the derivation are not the same as the error of the y values
     This method does not propagate the error
@@ -236,48 +237,76 @@ def fit_line_v6(x, y, dy):
 
     den = sum_dy_inv * sum_x2 - sum_x * sum_x_dy_inv
 
-    a_num = sum_dy_inv * sum_xy - sum_x_dy_inv * sum_y
-    a = a_num / den
+    m_num = sum_dy_inv * sum_xy - sum_x_dy_inv * sum_y
+    m = m_num / den
 
     b_num = sum_x2 * sum_y - sum_x * sum_xy
     b = b_num / den
 
     n = len(x)
-    y_fit = a * x + b
+    y_fit = m * x + b
     delta_y = y - y_fit
     y_err = np.sqrt(np.sum(delta_y ** 2) / (n - 2))
-    a_err = y_err * np.sqrt(n / den)
+    m_err = y_err * np.sqrt(n / den)
     b_err = y_err * np.sqrt(sum_x2 / den)
 
-    return a, b, a_err, b_err
+    return m, b, m_err, b_err
 
 
 def fit_line_v7(x, y, dy):
     '''
-    Fit data for y = ax + b
-    return a and b
+    Fit data for y = mx + b
+    return m and b
     from Huges & Hase "Measurements and their Uncertainties", pg 69-70
+    and Press et al. "Numerical Recipes 3rd Edition", pg 781-783
     '''
-    w = 1 / dy ** 2  # vweight is the inverse square of the uncertainty
+    w = 1 / dy ** 2  # weight is the inverse square of the uncertainty
 
-    sum_w = np.sum(w)
-    sum_wx = np.sum(w * x)
-    sum_wy = np.sum(w * y)
-    sum_wx2 = np.sum(w * x **2)
-    sum_wxy = np.sum(w * x * y)
+    s = np.sum(w)
+    sx = np.sum(w * x)
+    sy = np.sum(w * y)
+    sxx = np.sum(w * x **2)
+    sxy = np.sum(w * x * y)
 
-    den = sum_w * sum_wx2 - sum_wx ** 2
+    den = s * sxx - sx ** 2
 
-    a_num = sum_w * sum_wxy - sum_wx * sum_wy
-    a = a_num / den
+    m_num = s * sxy - sx * sy
+    m = m_num / den
 
-    b_num = sum_wx2 * sum_wy - sum_wx * sum_wxy
+    b_num = sxx * sy - sx * sxy
     b = b_num / den
 
-    a_err = np.sqrt(sum_w / den)
-    b_err = np.sqrt(sum_wx2 / den)
+    m_err = np.sqrt(s / den)
+    b_err = np.sqrt(sxx / den)
 
-    return a, b, a_err, b_err
+    return m, b, m_err, b_err
+
+
+def fit_line_v8(x, y, dy):
+    '''
+    Fit data for y = mx + b
+    return m and b
+    from Press et al. "Numerical Recipes 3rd Edition", pg 781-783
+    using numerically robust forulism
+    '''
+    w = 1 / dy ** 2  # weight is the inverse square of the uncertainty
+
+    s = np.sum(w)
+    sx = np.sum(w * x)
+    sy = np.sum(w * y)
+    sxx = np.sum(w * x **2)
+    sxy = np.sum(w * x * y)
+
+    t = 1 / dy * (x - sx / s)
+    stt = np.sum(t ** 2)
+
+    m = np.sum(t * y / dy) / stt
+    b = (sy - sx * m) / s
+
+    m_err = np.sqrt(1 / stt)
+    b_err = np.sqrt((1 + sx ** 2 / (s * stt)) / s)
+
+    return m, b, m_err, b_err
 
 
 def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
@@ -296,10 +325,10 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
     if dq is not None:
         dq2 = 2 * q[id_x] * dq[id_x]
 
-    a, b, a_err, b_err = fit_method(q2, log_iq, dlog_iq)
+    m, b, m_err, b_err = fit_method(q2, log_iq, dlog_iq)
 
-    rg = np.sqrt(-3 * a)
-    rg_err = 3 / (2 * rg) * a_err
+    rg = np.sqrt(-3 * m)
+    rg_err = 3 / (2 * rg) * m_err
 
     i0 = np.exp(b)
     i0_err = i0 * b_err
@@ -318,7 +347,7 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
         log_iq = np.insert(log_iq, 0, b)
         dlog_iq = np.insert(dlog_iq, 0, b_err)
 
-        y_fit = a * q2 + b
+        y_fit = m * q2 + b
         make_figures.plot_guinier_fit(q2, log_iq, y_fit, i0, i0_err, rg, rg_err,
                                       dlog_iq, save_fname=save_fname)
 
@@ -340,6 +369,7 @@ def compare_guinier_fit(q, iq, diq, **args):
         fit_line_v5,
         fit_line_v6,
         fit_line_v7,
+        fit_line_v8,
     ]
 
     for fit_method in fit_methods:
@@ -366,10 +396,15 @@ if __name__ == '__main__':
     import os
     import make_figures
 
-    data_fname = 'data/1mgml_LysoSANS.sub'; skiprows = 1
-    # data_fname = 'exp_data_lysozyme.dat'; skiprows = 0
+    # data_fname = 'data/1mgml_LysoSANS.sub'; skiprows = 1
+    # data_fname = 'data/1mgml_LysoSANS_effectiveQ.sub'; q_max = 0.091  # lys
+    data_fname = 'data/5mgml_nist_mab_sans.dat'; q_max = 0.029  # mab
     assert os.path.exists(data_fname)
     data = np.asfortranarray(np.loadtxt(data_fname, skiprows=skiprows))
+
+    # data[:, 1:3] *= 1 / data[0, 1]
+
+    # column 4 is the effective q-values, accounting for the beam spread
 
     if True:
         make_figures.plot_iq_and_guinier(data[:, 0], data[:, 1], data[:, 2],
@@ -382,7 +417,7 @@ if __name__ == '__main__':
     # data[:, 1:3] *= 100 / data[0, 1]  # set the first measured point to 100
     # data[:, 1:3] *= 1000 / data[0, 1]  # set the first measured point to 1000
 
-    compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2], q_max=0.091)
+    compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2], q_max=q_max)
 
     # i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1], data[:,2],
                                          # dq=data[:, 3], q_max=0.07,
