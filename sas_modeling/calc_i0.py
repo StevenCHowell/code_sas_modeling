@@ -424,8 +424,8 @@ if __name__ == '__main__':
 
     # data_fname = 'data/1mgml_LysoSANS.sub'; skiprows = 1
     skiprows = 0
-    # data_fname = 'data/1mgml_LysoSANS_effectiveQ.sub'; q_max = 0.091  # lys
-    data_fname = 'data/5mgml_nist_mab_sans.dat'; q_max = 0.0296  # mab
+    data_fname = 'data/1mgml_lys_sans.dat'; q_max = 0.091  # lys
+    # data_fname = 'data/5mgml_nist_mab_sans.dat'; q_max = 0.0296  # mab
     assert os.path.exists(data_fname)
     data = np.asfortranarray(np.loadtxt(data_fname, skiprows=skiprows))
 
@@ -446,10 +446,10 @@ if __name__ == '__main__':
 
     # compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2], q_max=q_max,
                         # refine=True)
-
+    save_fname = data_fname.replace('.dat', '.html')
     i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1], data[:,2],
                                          dq=data[:, 3], q_max=q_max,
                                          view_fit=True, fit_method=fit_line_v8,
-                                         refine=True)
+                                         refine=True, save_fname=save_fname)
 
     logging.debug('\m/ >.< \m/')
