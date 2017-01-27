@@ -39,8 +39,8 @@ def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
 def round_to_n(x, n=3):
     return round(x, -int(np.floor(np.log10(x))) + (n - 1))
 
-def plot_guinier_fit(x, y, y_fit, i0, i0_err, rg, rg_err, yerr, xerr=None,
-                     save_fname='fit_comparison.html'):
+def plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg, rg_err, dlog_iq,
+                     q_range, xerr=None, save_fname='fit_comparison.html'):
     '''
     plot data and a fit line
     '''
@@ -61,16 +61,17 @@ def plot_guinier_fit(x, y, y_fit, i0, i0_err, rg, rg_err, yerr, xerr=None,
         rg_err = round_to_n(rg_err, n=n_round)
 
 
-    title = '{}, I(0) = {}+/-{}, Rg = {}+/-{}'.format(save_fname.split('.')[0],
-                                                      i0, i0_err, rg, rg_err)
+    title = '{}, I(0) = {}+/-{}, Rg = {}+/-{}, q-range: [{}, {}]'.format(
+        save_fname.split('.')[0], i0, i0_err, rg, rg_err, q_range[0],
+        q_range[1])
     p = figure(title=title, x_axis_label='q^2 (1/A^2)', y_axis_label='ln(I(q))')
 
-    p.line(x, y_fit, color=palette[0], legend="fit", line_width=2)
+    p.line(q2, fit_line, color=palette[0], legend="fit", line_width=2)
 
     if xerr is None:
-        errorbar(p, x[1:], y[1:], yerr=yerr[1:], color=palette[1],
+        errorbar(p, q2[1:], log_iq[1:], yerr=dlog_iq[1:], color=palette[1],
                  point_kwargs={'legend': 'raw'})
-        errorbar(p, x[:1], y[:1], yerr=yerr[:1], color=palette[3],
+        errorbar(p, q2[:1], log_iq[:1], yerr=dlog_iq[:1], color=palette[3],
                  point_kwargs={'legend': 'extrapolated'})
     else:
         NotImplemented
