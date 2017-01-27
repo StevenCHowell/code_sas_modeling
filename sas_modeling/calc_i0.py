@@ -310,7 +310,8 @@ def fit_line_v8(x, y, dy):
 
 
 def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
-                fit_method=fit_line_v5, save_fname='guiner_fit.html'):
+                fit_method=fit_line_v5, save_fname='guiner_fit.html',
+                refine=False):
     '''
     perform Guinier fit
     return I(0) and Rg
@@ -329,17 +330,21 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
 
     rg = np.sqrt(-3 * m)
     rg_err = 3 / (2 * rg) * m_err
+    rg, rg_err = round_error(rg, rg_err)
 
     i0 = np.exp(b)
     i0_err = i0 * b_err
+    i0, i0_err = round_error(i0, i0_err)
 
     rg_q_max = 1.3 / rg
     if rg_q_max < q[id_x][-1]:
-        logging.warning('initial q-max too high, 1.3/Rg={}'.format(rg_q_max))
-        logging.warning('repeating fit with q-max={}'.format(rg_q_max))
-        return guinier_fit(q, iq, diq, dq=dq, q_min=q_min, q_max=rg_q_max,
-                           view_fit=view_fit, fit_method=fit_method,
-                           save_fname=save_fname)
+        logging.warning('initial q-max too high, 1.3/Rg={} < {}'.format(
+            rg_q_max, q[id_x][-1]))
+        if refine:
+            logging.warning('repeating fit with q-max={}'.format(rg_q_max))
+            return guinier_fit(q, iq, diq, dq=dq, q_min=q_min, q_max=rg_q_max,
+                               view_fit=view_fit, fit_method=fit_method,
+                               save_fname=save_fname)
 
     if view_fit:
         import make_figures
@@ -347,11 +352,32 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
         log_iq = np.insert(log_iq, 0, b)
         dlog_iq = np.insert(dlog_iq, 0, b_err)
 
-        y_fit = m * q2 + b
-        make_figures.plot_guinier_fit(q2, log_iq, y_fit, i0, i0_err, rg, rg_err,
-                                      dlog_iq, save_fname=save_fname)
+        fit_line = m * q2 + b
+        q_range = q[id_x][[0, -1]]
+        make_figures.plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg,
+                                      rg_err, dlog_iq, q_range,
+                                      save_fname=save_fname)
 
     return i0, rg, i0_err, rg_err
+
+
+def round_error(val, val_err, sig_figs=2):
+    '''
+    Round a value and its error estimate to a certain number
+    of significant figures (on the error estimate).  By default 2
+    significant figures are used.
+    '''
+    # round number to a certain number of significant figures
+
+    n = int(np.log10(val_err))  # displacement from ones place
+    if val_err >= 1:
+        n += 1
+
+    scale = 10 ** (sig_figs - n)
+    val = round(val * scale) / scale
+    val_err = round(val_err * scale) / scale
+
+    return val, val_err
 
 
 def compare_guinier_fit(q, iq, diq, **args):
@@ -397,8 +423,9 @@ if __name__ == '__main__':
     import make_figures
 
     # data_fname = 'data/1mgml_LysoSANS.sub'; skiprows = 1
+    skiprows = 0
     # data_fname = 'data/1mgml_LysoSANS_effectiveQ.sub'; q_max = 0.091  # lys
-    data_fname = 'data/5mgml_nist_mab_sans.dat'; q_max = 0.029  # mab
+    data_fname = 'data/5mgml_nist_mab_sans.dat'; q_max = 0.0296  # mab
     assert os.path.exists(data_fname)
     data = np.asfortranarray(np.loadtxt(data_fname, skiprows=skiprows))
 
@@ -417,10 +444,12 @@ if __name__ == '__main__':
     # data[:, 1:3] *= 100 / data[0, 1]  # set the first measured point to 100
     # data[:, 1:3] *= 1000 / data[0, 1]  # set the first measured point to 1000
 
-    compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2], q_max=q_max)
+    # compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2], q_max=q_max,
+                        # refine=True)
 
-    # i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1], data[:,2],
-                                         # dq=data[:, 3], q_max=0.07,
-                                         # view_fit=True, fit_method=fit_line_v6)
+    i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1], data[:,2],
+                                         dq=data[:, 3], q_max=q_max,
+                                         view_fit=True, fit_method=fit_line_v8,
+                                         refine=True)
 
     logging.debug('\m/ >.< \m/')
