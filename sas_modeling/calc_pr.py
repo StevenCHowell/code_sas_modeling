@@ -8,6 +8,7 @@ from scipy.spatial.distance import pdist
 
 from sasmol import sasmol  # https://github.com/madscatt/sasmol
 
+use_numba = False
 try:
     import numba
 except ImportError:
@@ -59,6 +60,7 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir=''):
             # output the result
             out_fname = '{}_{:05d}.pr'.format(out_prefix, i+1)
             np.savetxt(out_fname, pr, fmt='%d', delimiter=',')
+
     toc = time.time() - tic
     logging.info('calculated P(r) for {} structures in {} s'.format(n_frames,
                                                                     toc))
@@ -66,8 +68,11 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir=''):
     mol.close_dcd_read(dcd_file[0])
 
 
-@numba.jit(nopython=True)
-def jit_histogram(distances, pr):
+@numba.jit(['int64[:], int64[:]',
+      'float32[:], int64[:]',
+      'float64[:], int64[:]'],
+     nopython=True)
+def jit_hist(distances, pr):
     for dist in distances:
         pr[round(dist)] += 1
 
@@ -82,10 +87,10 @@ def calc_pr_numba(coor):
 
     # bin the distances into P(r)
     r_max = dist.max()
-    n_bins = np.ceil(r_max).astype(int) + 1
+    n_bins = np.round(r_max).astype(int) + 1
     pr = np.zeros([n_bins, 2], dtype=np.int)
     pr[:, 0] = np.arange(n_bins) + 1
-    jit_hist(dist, pr[:, 1])
+    jit_histogram(dist, pr[:, 1])
 
     return pr
 
@@ -96,9 +101,9 @@ def calc_pr_python(coor):
 
     # bin the distances into P(r)
     r_max = dist.max()
-    n_bins = np.ceil(r_max).astype(int) + 1
+    n_bins = np.round(r_max).astype(int) + 1
     pr = np.empty([n_bins, 2], dtype=np.int)
-    pr[:, 0] = np.arange(n_bins) + 1
+    pr[:, 0] = np.arange(n_bins)
     int_dist = np.round(dist).astype(np.int)
     pr[:, 1] = np.bincount(int_dist)
 
@@ -120,9 +125,9 @@ def mkdir_p(path):
 
 if __name__ == '__main__':
     pdb_fname = 'new_nl1_nrx1b_00001.pdb'
-    dcd_fname = 'new_nl1_nrx1b_1-5.dcd'
+    dcd_fname = 'new_nl1_nrx1b.dcd'
     in_dir = '/home/schowell/data/scratch/docking'
     out_dir = '/home/schowell/data/scratch/docking/pr'
-    main(pdb_fname, dcd_fname=dcd_fname, in_dir=in_dir)  #, out_dir=out_dir)
+    main(pdb_fname, dcd_fname=dcd_fname, in_dir=in_dir, out_dir=out_dir)
 
 
