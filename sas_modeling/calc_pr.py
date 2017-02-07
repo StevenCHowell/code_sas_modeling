@@ -8,7 +8,10 @@ from scipy.spatial.distance import pdist
 
 from sasmol import sasmol  # https://github.com/madscatt/sasmol
 
-
+try:
+    import numba
+except ImportError:
+    use_numba = False
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
@@ -39,34 +42,67 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir=''):
         out_prefix = os.path.join(out_dir, out_prefix)
 
     tic = time.time()
-    for i in xrange(n_frames):
-        mol.read_dcd_step(dcd_file, i)
+    if use_numba:
+        for i in xrange(n_frames):
+            mol.read_dcd_step(dcd_file, i)
+            pr = calc_pr_numba(mol.coor()[0])
 
-        # calculated the euclidean distances
-        dist = pdist(mol.coor()[0])
+            # output the result
+            out_fname = '{}_{:05d}.pr'.format(out_prefix, i+1)
+            np.savetxt(out_fname, pr, fmt='%d', delimiter=',')
 
-        # bin the distances into P(r)
-        r_max = dist.max()
-        r_min = dist.min()
-        if r_min < 0.5:
-            logging.warning('min distance less than 0.5 A: {}'.format(r_min))
+    else:
+        for i in xrange(n_frames):
+            mol.read_dcd_step(dcd_file, i)
+            pr = calc_pr_python(mol.coor()[0])
 
-        n_bins = np.ceil(r_max).astype(int) + 1
-        bin_edges = np.arange(n_bins + 1) - 0.5
-        pr = np.empty([n_bins, 2])
-        pr[:, 0] = np.arange(n_bins) + 1
-        pr[:, 1], _ = np.histogram(dist, bin_edges)
-
-        # output the result
-        out_fname = '{}_{:05d}.pr'.format(out_prefix, i+1)
-        np.savetxt(out_fname, pr, fmt='%d', delimiter=',')
-
+            # output the result
+            out_fname = '{}_{:05d}.pr'.format(out_prefix, i+1)
+            np.savetxt(out_fname, pr, fmt='%d', delimiter=',')
     toc = time.time() - tic
     logging.info('calculated P(r) for {} structures in {} s'.format(n_frames,
                                                                     toc))
 
     mol.close_dcd_read(dcd_file[0])
 
+
+@numba.jit(nopython=True)
+def jit_histogram(distances, pr):
+    for dist in distances:
+        pr[round(dist)] += 1
+
+
+def calc_pr_numba(coor):
+    '''
+    calculate P(r) from an array of coordinates
+    when written, this was twice as fast as python method
+    '''
+    # calculate the euclidean distances
+    dist = pdist(coor)
+
+    # bin the distances into P(r)
+    r_max = dist.max()
+    n_bins = np.ceil(r_max).astype(int) + 1
+    pr = np.zeros([n_bins, 2], dtype=np.int)
+    pr[:, 0] = np.arange(n_bins) + 1
+    jit_hist(dist, pr[:, 1])
+
+    return pr
+
+
+def calc_pr_python(coor):
+    # calculate the euclidean distances
+    dist = pdist(coor)
+
+    # bin the distances into P(r)
+    r_max = dist.max()
+    n_bins = np.ceil(r_max).astype(int) + 1
+    pr = np.empty([n_bins, 2], dtype=np.int)
+    pr[:, 0] = np.arange(n_bins) + 1
+    int_dist = np.round(dist).astype(np.int)
+    pr[:, 1] = np.bincount(int_dist)
+
+    return pr
 
 def mkdir_p(path):
     '''
