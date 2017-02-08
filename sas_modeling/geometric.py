@@ -2,7 +2,7 @@
 #coding:utf-8
 '''
     Author:  Steven C. Howell --<steven.howell@nist.gov>
-    Purpose: the scattering of a uniform sphere
+    Purpose: the scattering of a geometric shapes
     Created: 02/03/2017
 
 00000000011111111112222222222333333333344444444445555555555666666666677777777778
@@ -15,7 +15,7 @@ import logging
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 
-def get_pq(r, q, p_scat, p_sol, scale=1.0, bkg=0.0):
+def sphere(r, q, p_scat, p_sol, scale=1.0, bkg=0.0):
     if q[0] <= 0:
         logging.warning('skipping invalid Q-value: {}'.format(q[0]))
         q = q[1:]
@@ -40,7 +40,7 @@ if __name__=="__main__":
     # to match https://www.ncnr.nist.gov/resources/sansmodels/Sphere.html
 
     # data from https://www.ncnr.nist.gov/resources/sansmodels/Sphere.html
-    ref = np.loadtxt('sphere_model.dat')
+    ref = np.loadtxt('ncnr_sphere.iq')
 
     scale = 1.0
     bkg = 0.0
@@ -53,7 +53,7 @@ if __name__=="__main__":
     # n_points = len(ref)
     # q = np.logspace(np.log10(q_min), np.log10(q_max), n_points)
 
-    pq = get_pq(r, ref[:, 0], p_scat, p_sol, scale=scale, bkg=bkg)
+    pq = sphere(r, ref[:, 0], p_scat, p_sol, scale=scale, bkg=bkg)
 
     # assert np.allclose(ref[:, 1], pq[:, 1], atol=1e-5)
     if not np.allclose(ref, pq, atol=1e-5):
