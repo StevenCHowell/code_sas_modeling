@@ -347,7 +347,7 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
                                save_fname=save_fname)
 
     if view_fit:
-        import make_figures
+        from sas_modeling import make_figures
         q2 = np.insert(q2, 0, 0.0)
         log_iq = np.insert(log_iq, 0, b)
         dlog_iq = np.insert(dlog_iq, 0, b_err)
