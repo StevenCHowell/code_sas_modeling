@@ -67,7 +67,7 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir=''):
 
     mol.close_dcd_read(dcd_file[0])
 
-
+"""
 @numba.jit(['int64[:], int64[:]',
       'float32[:], int64[:]',
       'float64[:], int64[:]'],
@@ -93,7 +93,7 @@ def calc_pr_numba(coor):
     jit_histogram(dist, pr[:, 1])
 
     return pr
-
+"""
 
 def calc_pr_python(coor):
     # calculate the euclidean distances
