@@ -178,3 +178,37 @@ def match_lstsq(in_data, rf_data):
     x2 = get_x2(rf_data, mt_data)
 
     return mt_data, scale, offset, x2
+
+
+def get_x2(rf_data, mt_data, dof=None):
+    x2, _ = get_x2_components(rf_data, mt_data, dof=dof)
+
+    return x2
+
+
+def get_x2_components(rf_data, mt_data, dof=None):
+    diff = mt_data[:, 1] - rf_data[:, 1]
+    diff2 = diff * diff
+    er2 = rf_data[:, 2] * rf_data[:, 2]
+    if not dof:
+        dof = len(rf_data)
+    components = (diff2 / er2) / dof
+    x2 = components.sum()
+
+    return x2, components
+
+
+def get_r(rf_data, mt_data):
+    r, _ = get_r_components(rf_data, mt_data)
+
+    return r
+
+
+def get_r_components(rf_data, mt_data):
+    # R value as defined by doi: 10.1042/bj2670203
+    diff = np.abs(mt_data[:, 1] - rf_data[:, 1])
+    norm = np.abs(rf_data[:, 1]).sum()
+    components = diff / norm
+    r = components.sum()
+
+    return r, components
