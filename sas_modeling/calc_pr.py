@@ -1,4 +1,5 @@
 import errno
+import glob
 import logging
 import os
 import time
@@ -8,15 +9,11 @@ from scipy.spatial.distance import pdist
 
 from sasmol import sasmol  # https://github.com/madscatt/sasmol
 
-use_numba = False
-try:
-    import numba
-except ImportError:
-    use_numba = False
+import numba
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
-def main(pdb_fname, dcd_fname='', in_dir='', out_dir=''):
+def main(pdb_fname, dcd_fname='', in_dir='', out_dir='', restart=False):
     '''
     calculate the pair-distance distribution
     '''
@@ -43,38 +40,38 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir=''):
         out_prefix = os.path.join(out_dir, out_prefix)
 
     tic = time.time()
-    if use_numba:
-        for i in xrange(n_frames):
-            mol.read_dcd_step(dcd_file, i)
-            pr = calc_pr_numba(mol.coor()[0])
+    n_start = 0
+    if restart:
+        fnames = glob.glob(os.path.join(out_dir, '*.pr'))
+        if fnames:
+            fnames.sort()
+            n_start = int(fnames[-1].replace('{}_'.format(out_prefix), '')[:-3])
+            for i in xrange(n_start):
+                mol.read_dcd_step(dcd_file, i)
 
-            # output the result
-            out_fname = '{}_{:05d}.pr'.format(out_prefix, i+1)
-            np.savetxt(out_fname, pr, fmt='%d', delimiter=',')
+    for i in xrange(n_start, n_frames):
+        mol.read_dcd_step(dcd_file, i)
+        pr = calc_pr_numba(mol.coor()[0])
 
-    else:
-        for i in xrange(n_frames):
-            mol.read_dcd_step(dcd_file, i)
-            pr = calc_pr_python(mol.coor()[0])
-
-            # output the result
-            out_fname = '{}_{:05d}.pr'.format(out_prefix, i+1)
-            np.savetxt(out_fname, pr, fmt='%d', delimiter=',')
+        # output the result
+        out_fname = '{}_{:05d}.pr'.format(out_prefix, i+1)
+        np.savetxt(out_fname, pr, fmt='%d', delimiter=',')
 
     toc = time.time() - tic
-    logging.info('calculated P(r) for {} structures in {} s'.format(n_frames,
-                                                                    toc))
+    logging.info('calculated P(r) for {} structures in {} s'.format(
+        n_frames-n_start, toc))
+    logging.info('{} s for each structure'.format(toc/(n_frames-n_start)))
 
     mol.close_dcd_read(dcd_file[0])
 
-"""
+
 @numba.jit(['int64[:], int64[:]',
       'float32[:], int64[:]',
       'float64[:], int64[:]'],
      nopython=True)
-def jit_hist(distances, pr):
+def bincount(distances, pr):
     for dist in distances:
-        pr[round(dist)] += 1
+        pr[int(round(dist))] += 1
 
 
 def calc_pr_numba(coor):
@@ -89,25 +86,11 @@ def calc_pr_numba(coor):
     r_max = dist.max()
     n_bins = np.round(r_max).astype(int) + 1
     pr = np.zeros([n_bins, 2], dtype=np.int)
-    pr[:, 0] = np.arange(n_bins) + 1
-    jit_histogram(dist, pr[:, 1])
-
-    return pr
-"""
-
-def calc_pr_python(coor):
-    # calculate the euclidean distances
-    dist = pdist(coor)
-
-    # bin the distances into P(r)
-    r_max = dist.max()
-    n_bins = np.round(r_max).astype(int) + 1
-    pr = np.empty([n_bins, 2], dtype=np.int)
     pr[:, 0] = np.arange(n_bins)
-    int_dist = np.round(dist).astype(np.int)
-    pr[:, 1] = np.bincount(int_dist)
+    bincount(dist, pr[:, 1])
 
     return pr
+
 
 def mkdir_p(path):
     '''
@@ -126,8 +109,10 @@ def mkdir_p(path):
 if __name__ == '__main__':
     pdb_fname = 'new_nl1_nrx1b_00001.pdb'
     dcd_fname = 'new_nl1_nrx1b.dcd'
+    # dcd_fname = 'new_nl1_nrx1b_1-5.dcd'
     in_dir = '/home/schowell/data/scratch/docking'
     out_dir = '/home/schowell/data/scratch/docking/pr'
-    main(pdb_fname, dcd_fname=dcd_fname, in_dir=in_dir, out_dir=out_dir)
+    main(pdb_fname, dcd_fname=dcd_fname, in_dir=in_dir, out_dir=out_dir,
+         restart=True)
 
 
