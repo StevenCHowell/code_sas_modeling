@@ -13,6 +13,7 @@ import numba
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
+
 def main(pdb_fname, dcd_fname='', in_dir='', out_dir='', restart=False):
     '''
     calculate the pair-distance distribution
@@ -32,7 +33,7 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir='', restart=False):
         out_prefix = dcd_fname[:-4]
 
     else:
-        n_frame = 1
+        n_frames = 1
         out_prefix = pdb_fname[:-4]
 
     if out_dir:
@@ -45,7 +46,8 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir='', restart=False):
         fnames = glob.glob(os.path.join(out_dir, '*.pr'))
         if fnames:
             fnames.sort()
-            n_start = int(fnames[-1].replace('{}_'.format(out_prefix), '')[:-3])
+            n_start = int(fnames[-1].replace(
+                          '{}_'.format(out_prefix), '')[:-3])
             for i in xrange(n_start):
                 mol.read_dcd_step(dcd_file, i)
 
@@ -66,9 +68,9 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir='', restart=False):
 
 
 @numba.jit(['int64[:], int64[:]',
-      'float32[:], int64[:]',
-      'float64[:], int64[:]'],
-     nopython=True)
+            'float32[:], int64[:]',
+            'float64[:], int64[:]'],
+           nopython=True)
 def bincount(distances, pr):
     for dist in distances:
         pr[int(round(dist))] += 1
@@ -114,5 +116,3 @@ if __name__ == '__main__':
     out_dir = '/home/schowell/data/scratch/docking/pr'
     main(pdb_fname, dcd_fname=dcd_fname, in_dir=in_dir, out_dir=out_dir,
          restart=True)
-
-
