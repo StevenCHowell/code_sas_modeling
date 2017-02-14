@@ -4,6 +4,7 @@ import sas_modeling.compare
 import sas_modeling.file_io
 import sas_modeling.geometric
 import sas_modeling.make_figures
+import sas_modeling.cluster_ensemble
 
 try:
     import sas_modeling.calc_pr
