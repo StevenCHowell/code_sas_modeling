@@ -4,10 +4,18 @@ import sas_modeling.compare
 import sas_modeling.file_io
 import sas_modeling.geometric
 import sas_modeling.make_figures
-import sas_modeling.cluster_ensemble
+
+sasmol_error = ('not available, depends on sasmol: '
+        'https://github.com/madscatt/sasmol')
+
+try:
+    import sas_modeling.cluster_ensemble
+except ImportError:
+    print('cluster_ensemble {}'.format(sasmol_error))
 
 try:
     import sas_modeling.calc_pr
-except ModuleNotFoundError:
-    print('calc_pr not available, depends on sasmol: '
-        'https://github.com/madscatt/sasmol')
+except ImportError:
+    print('calc_pr {}'.format(sasmol_error))
+
+del(sasmol_error)
