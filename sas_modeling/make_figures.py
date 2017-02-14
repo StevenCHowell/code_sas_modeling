@@ -15,6 +15,32 @@ from bokeh.palettes import Colorblind8 as palette
 from bokeh.layouts import gridplot
 
 
+def solarized(n=11):
+    palette = [
+        '#0087ff',  # blue
+        '#5f8700',  # green
+        '#af8700',  # yellow
+        '#d75f00',  # orange
+        '#00afaf',  # cyan
+        '#d70000',  # red
+        '#5f5faf',  # violet
+        '#af005f',  # magenta
+        '#262626',  # base02
+        '#585858',  # base01
+        '#8a8a8a',  # base1
+        # '#626262',  # base00
+        # '#808080',  # base0
+        # '#e4e4e4',  # base2
+        # '#ffffd7',  # base3
+        # '#1c1c1c',  # base03
+        ]
+
+    if n > len(palette):
+        n = len(palette)
+
+    return palette[:n]
+
+
 def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
              point_kwargs={}, error_kwargs={}):
 
