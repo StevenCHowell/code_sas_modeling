@@ -142,7 +142,7 @@ def create_cluster_dcds(labels, pdb_fname, dcd_fname, output_dir):
     mol.close_dcd_read(dcd_in_file[0])
 
     # create a dcd for each cluster
-    n_max = 200
+    n_max = 500
     i_lists = []
     j = 0
     unique = set(labels)
