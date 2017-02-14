@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#coding:utf-8
+# coding:utf-8
 '''
     Author:  Steven C. Howell --<steven.howell@nist.gov>
     Purpose: calculating the Guinier fit
@@ -31,7 +31,7 @@ def fit_line_v0(x, y, dy):
     errfunc = lambda p, x, y, w: (y - fitfunc(p, x)) * w
 
     # use the last two points to guess the initial values
-    m_guess = (y[-2] - y[-1]) / (x[-2] - x[-1])  # guess the slope from 2 points
+    m_guess = (y[-2] - y[-1]) / (x[-2] - x[-1])  # use 2 points to guess slope
     b_guess = y[-1] - m_guess * x[-1]  # gues the y-intercept from 2 points
     p_guess = [m_guess, b_guess]
 
@@ -62,8 +62,8 @@ def fit_line_v0(x, y, dy):
     #   hand ‘trf’ and ‘dogbox’ methods use Moore-Penrose pseudoinverse to
     #   compute the covariance matrix.
     cov = out[1]
-    m_err = np.sqrt( cov[0, 0] )
-    b_err = np.sqrt( cov[1, 1] )
+    m_err = np.sqrt(cov[0, 0])
+    b_err = np.sqrt(cov[1, 1])
 
     return m, b, m_err, b_err
 
@@ -75,7 +75,7 @@ def fit_line_v1(x, y, dy):
 
     no error estimates
     '''
-    w = 1/ dy ** 2
+    w = 1 / dy ** 2
 
     A = np.vstack([x * w, 1.0 * w]).T
     p, residuals, _, _ = np.linalg.lstsq(A, y * w)
@@ -265,7 +265,7 @@ def fit_line_v7(x, y, dy):
     s = np.sum(w)
     sx = np.sum(w * x)
     sy = np.sum(w * y)
-    sxx = np.sum(w * x **2)
+    sxx = np.sum(w * x ** 2)
     sxy = np.sum(w * x * y)
 
     den = s * sxx - sx ** 2
@@ -287,15 +287,13 @@ def fit_line_v8(x, y, dy):
     Fit data for y = mx + b
     return m and b
     from Press et al. "Numerical Recipes 3rd Edition", pg 781-783
-    using numerically robust forulism
+    using numerically robust formalism
     '''
     w = 1 / dy ** 2  # weight is the inverse square of the uncertainty
 
     s = np.sum(w)
     sx = np.sum(w * x)
     sy = np.sum(w * y)
-    sxx = np.sum(w * x **2)
-    sxy = np.sum(w * x * y)
 
     t = 1 / dy * (x - sx / s)
     stt = np.sum(t ** 2)
@@ -400,7 +398,6 @@ def compare_guinier_fit(q, iq, diq, **args):
 
     for fit_method in fit_methods:
         save_fname = 'fit_{}_comparison.html'.format(fit_method.__name__[-2:])
-        # save_fname = 'fit_{}_comparison.html'.format(fit_method.func_name[-2:])
         i0, rg, i0_err, rg_err = guinier_fit(q, iq, diq, fit_method=fit_method,
                                              save_fname=save_fname,
                                              view_fit=True, **args)
@@ -434,9 +431,9 @@ if __name__ == '__main__':
     # column 4 is the effective q-values, accounting for the beam spread
 
     if True:
+        plot_fname = 'I(q)_and_guinier-no_scale.html'
         make_figures.plot_iq_and_guinier(data[:, 0], data[:, 1], data[:, 2],
-                                        save_fname='I(q)_and_guinier-no_scale.html')
-
+                                         save_fname=plot_fname)
 
     # scale the data
     # data[:, 1:3] *= 1 / data[0, 1]  # set the first measured point to 1
@@ -445,9 +442,10 @@ if __name__ == '__main__':
     # data[:, 1:3] *= 1000 / data[0, 1]  # set the first measured point to 1000
 
     # compare_guinier_fit(data[:, 0], data[:, 1], data[:, 2], q_max=q_max,
-                        # refine=True)
+    #                     refine=True)
+
     save_fname = data_fname.replace('.dat', '.html')
-    i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1], data[:,2],
+    i0, rg, i0_err, rg_err = guinier_fit(data[:, 0], data[:, 1], data[:, 2],
                                          dq=data[:, 3], q_max=q_max,
                                          view_fit=True, fit_method=fit_line_v8,
                                          refine=True, save_fname=save_fname)
