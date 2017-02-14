@@ -15,7 +15,7 @@ from bokeh.palettes import Colorblind8 as palette
 from bokeh.layouts import gridplot
 
 
-def solarized(n=11):
+def define_solarized(n=11):
     palette = [
         '#0087ff',  # blue
         '#5f8700',  # green
@@ -144,3 +144,6 @@ def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
     layout = gridplot([r0, r1])
 
     show(layout)
+
+
+solarized = define_solarized()
