@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#coding:utf-8
+# coding:utf-8
 """
     Author:  Steven C. Howell --<steven.howell@nist.gov>
     Purpose: collection of helpful bokeh plotting functions
@@ -13,6 +13,7 @@ import numpy as np
 from bokeh.plotting import figure, output_file, show
 from bokeh.palettes import Colorblind8 as palette
 from bokeh.layouts import gridplot
+
 
 def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
              point_kwargs={}, error_kwargs={}):
@@ -39,6 +40,7 @@ def errorbar(fig, x, y, xerr=None, yerr=None, color='red',
 def round_to_n(x, n=3):
     return round(x, -int(np.floor(np.log10(x))) + (n - 1))
 
+
 def plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg, rg_err, dlog_iq,
                      q_range, xerr=None, save_fname='fit_comparison.html'):
     '''
@@ -60,11 +62,11 @@ def plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg, rg_err, dlog_iq,
     else:
         rg_err = round_to_n(rg_err, n=n_round)
 
-
     title = '{}, I(0) = {}+/-{}, Rg = {}+/-{}, q-range: [{}, {}]'.format(
         save_fname.split('.')[0], i0, i0_err, rg, rg_err, q_range[0],
         q_range[1])
-    p = figure(title=title, x_axis_label='q^2 (1/A^2)', y_axis_label='ln(I(q))')
+    p = figure(title=title, x_axis_label='q^2 (1/A^2)',
+               y_axis_label='ln(I(q))')
 
     p.line(q2, fit_line, color=palette[0], legend="fit", line_width=2)
 
@@ -90,19 +92,19 @@ def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
     errorbar(p0, q, iq, yerr=diq, color=palette[1])
 
     p1 = figure(title='log', x_axis_label='q (1/A)', y_axis_label='I(q)',
-                x_axis_type='log', y_axis_type='log')  #,  x_range=p0.x_range, y_range=p0.y_range)
+                x_axis_type='log', y_axis_type='log',
+                # x_range=p0.x_range, y_range=p0.y_range
+                )
     errorbar(p1, q, iq, yerr=diq, color=palette[1])
 
     x = q ** 2
     y = np.log(iq)
 
     p2 = figure(title='Guinier', x_axis_label='q^2 (1/A^2)',
-               y_axis_label='ln(I(q))')
+                y_axis_label='ln(I(q))')
 
     dy_skew = (np.log(iq + diq) - np.log(iq - diq)) / 2.0
-    # p3 = figure(title='Guinier (skewed errorbars)', x_axis_label='q^2 (1/A^2)',
-                # y_axis_label='ln(I(q))', x_range=p2.x_range,
-                # y_range=p2.y_range)
+
     errorbar(p2, x, y, yerr=dy_skew, color=palette[0],
              point_kwargs={'legend': 'log(iq +/- averaged diq)'})
 
@@ -110,10 +112,8 @@ def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
     errorbar(p2, x, y, yerr=dy, color=palette[1],
              point_kwargs={'legend': 'log(iq +/- diq)'})
 
-
-
     r0 = [p0, p1]
-    r1 = [p2]  #, p3]
+    r1 = [p2]  # , p3]
 
     layout = gridplot([r0, r1])
 
