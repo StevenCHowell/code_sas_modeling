@@ -189,7 +189,7 @@ def calc_k_dist(data, output_dir):
     n_samples = len(data)
     dist = np.zeros([n_samples, 2])
     dist[:, 0] = np.arange(n_samples)
-    for i in dist[:, 0]:
+    for i in dist[:, 0].astype(np.int):
         # iterating to save memory
         i_dist = scipy.spatial.distance.cdist(data[i].reshape([1, -1]),
                                               data[dist[:, 0]!=i])
