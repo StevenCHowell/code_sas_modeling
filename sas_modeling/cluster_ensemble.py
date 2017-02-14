@@ -121,44 +121,67 @@ def create_cluster_dcds(labels, pdb_fname, dcd_fname, output_dir):
     mol = sasmol.SasMol(0)
     mol.read_pdb(pdb_fname)
 
-    dcd_fnames = []
-    cluster_out_files = [] # dcds for clusters
     dcd_basename = os.path.basename(dcd_fname)[:-4]
-    unique_out_fname = '{}{}_uniue.dcd'.format(output_dir, dcd_basename)
-    dcd_out_file = mol.open_dcd_write(unique_out_fname)  # unique structures
+
+    # create a dcd with one structure from each cluster
+    unique_out_fname = '{}{}_unique.dcd'.format(output_dir, dcd_basename)
+    dcd_out_file = mol.open_dcd_write(unique_out_fname)
     dcd_in_file = mol.open_dcd_read(dcd_fname)
-
-    unique = set(labels)
-    unique.remove(0)
-
-    for i in range(len(unique)):
-        dcd_fnames.append('{}{}_c{:06d}.dcd'.format(output_dir, dcd_basename,
-                                                    i))
-        cluster_out_files.append(mol.open_dcd_write(dcd_fnames[i]))
-
     visited_cluster = set()
     dcd_out_frame = 0
-    cluster_out_frame = np.zeros(len(unique), dtype=int)
-
     for (i, label) in enumerate(labels):
         mol.read_dcd_step(dcd_in_file, i)
         if label == 0:
             dcd_out_frame += 1
             mol.write_dcd_step(dcd_out_file, 0, dcd_out_frame)
-        else:
-            cluster_out_frame[label-1] += 1
-            mol.write_dcd_step(cluster_out_files[label-1], 0,
-                               cluster_out_frame[label-1])
-            if label not in visited_cluster:
-                visited_cluster.add(label)
-                dcd_out_frame += 1
-                mol.write_dcd_step(dcd_out_file, 0, dcd_out_frame)
-
-    for cluster_out_file in cluster_out_files:
-        mol.close_dcd_write(cluster_out_file)
-
+        elif label not in visited_cluster:
+            visited_cluster.add(label)
+            dcd_out_frame += 1
+            mol.write_dcd_step(dcd_out_file, 0, dcd_out_frame)
     mol.close_dcd_write(dcd_out_file)
     mol.close_dcd_read(dcd_in_file[0])
+
+    # create a dcd for each cluster
+    n_max = 200
+    i_lists = []
+    j = 0
+    unique = set(labels)
+    remove_0 = False  # consider using this option
+    if remove_0:
+        unique.remove(0)
+        for i in range(np.floor(len(unique)/n_max).astype(int)):
+            i_lists.append(list(range(n_max * j + 1, n_max * (j + 1) + 1)))
+            j += 1  # required for situation when len(unique) < n_max
+        i_lists.append(list(range(n_max * j + 1, len(unique) + 1)))
+    else:
+        for i in range(np.floor(len(unique)/n_max).astype(int)):
+            i_lists.append(list(range(n_max * j, n_max * (j + 1))))
+            j += 1  # required for situation when len(unique) < n_max
+        i_lists.append(list(range(n_max * j, len(unique))))
+
+    n_written = 0
+    for i_list in i_lists:
+        dcd_fnames = []
+        cluster_out_files = [] # dcds for clusters
+        cluster_out_frame = np.zeros(n_max, dtype=int)
+        for i in i_list:
+            dcd_fnames.append('{}{}_c{:06d}.dcd'.format(output_dir,
+                                                        dcd_basename, i))
+            cluster_out_files.append(mol.open_dcd_write(dcd_fnames[i%n_max]))
+
+        dcd_in_file = mol.open_dcd_read(dcd_fname)
+        for (i, label) in enumerate(labels):
+            mol.read_dcd_step(dcd_in_file, i)
+            if label in i_list:
+                mol.write_dcd_step(cluster_out_files[label%n_max], 0,
+                                   cluster_out_frame[label%n_max])
+                # cluster_out_frame[label%n_max] += 1  # index for writing output
+                n_written += 1
+
+        mol.close_dcd_read(dcd_in_file[0])
+
+        for cluster_out_file in cluster_out_files:
+            mol.close_dcd_write(cluster_out_file)
 
 
 def calc_k_dist(data, output_dir):
