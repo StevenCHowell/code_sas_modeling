@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#coding:utf-8
+# coding:utf-8
 '''
     Author:  Steven C. Howell --<steven.howell@nist.gov>
     Purpose: the scattering of a geometric shapes
@@ -37,8 +37,6 @@ def sphere(r, q, p_scat, p_sol, scale=1.0, bkg=0.0):
 
 
 if __name__=="__main__":
-    # to match https://www.ncnr.nist.gov/resources/sansmodels/Sphere.html
-
     # data from https://www.ncnr.nist.gov/resources/sansmodels/Sphere.html
     ref = np.loadtxt('ncnr_sphere.iq')
 
