@@ -18,13 +18,13 @@ from bokeh.layouts import gridplot
 def define_solarized(n=11):
     palette = [
         '#0087ff',  # blue
+        '#d70000',  # red
         '#5f8700',  # green
         '#af8700',  # yellow
-        '#d75f00',  # orange
-        '#00afaf',  # cyan
-        '#d70000',  # red
-        '#5f5faf',  # violet
         '#af005f',  # magenta
+        '#00afaf',  # cyan
+        '#d75f00',  # orange
+        '#5f5faf',  # violet
         '#262626',  # base02
         '#585858',  # base01
         '#8a8a8a',  # base1
