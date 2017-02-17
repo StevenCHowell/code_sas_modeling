@@ -11,7 +11,7 @@
 import numpy as np
 
 from bokeh.plotting import figure, output_file, show
-from bokeh.palettes import Colorblind8 as palette
+# from bokeh.palettes import Colorblind8 as palette
 from bokeh.layouts import gridplot
 
 
@@ -92,7 +92,7 @@ def plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg, rg_err, dlog_iq,
         save_fname.split('.')[0], i0, i0_err, rg, rg_err, q_range[0],
         q_range[1])
     p = figure(title=title, x_axis_label='q^2 (1/A^2)',
-               y_axis_label='ln(I(q))')
+               y_axis_label='ln(I(q))', width=472, height=400)
 
     p.line(q2, fit_line, color=palette[0], legend="fit", line_width=2)
 
@@ -147,3 +147,4 @@ def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
 
 
 solarized = define_solarized()
+palette = solarized
