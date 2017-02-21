@@ -12,9 +12,40 @@
 '''
 
 import numpy as np
+from scipy import interpolate
 import logging
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+
+
+def interp_data(data, x_grid):
+    """
+    interpolate data to a new x-grid
+
+    Parameters
+    ----------
+    data:
+        input data to interpolate (should be NxM np.array, where
+        data[:, 0] is the original x-grid, and every subsequent
+        column is data-set that should be interpolated)
+    x_grid:
+        new x-grid to interpolate to (should be np.array of length L)
+
+    Returns
+    -------
+    new_data: interpolated data (np.array with dimensions LxM)
+    """
+
+    n_data = data.shape[1] - 1
+    n_x = len(x_grid)
+    new_data = np.empty([n_x, n_data+1], order='f')
+    new_data[:, 0] = x_grid
+
+    for i in range(n_data):
+        interp_data = interpolate.splrep(data[:, 0], data[:, i])
+        new_data[:, i] = interpolate.splev(x_grid, interp_data)
+
+    return new_data
 
 
 def scale(in_data, rf_data):
