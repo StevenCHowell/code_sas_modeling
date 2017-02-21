@@ -352,9 +352,11 @@ def guinier_fit(q, iq, diq, dq=None, q_min=0.0, q_max=0.1, view_fit=False,
 
         fit_line = m * q2 + b
         q_range = q[id_x][[0, -1]]
-        make_figures.plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg,
-                                      rg_err, dlog_iq, q_range,
-                                      save_fname=save_fname)
+        fig = make_figures.plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err,
+                                            rg, rg_err, dlog_iq, q_range,
+                                            save_fname=save_fname)
+
+        return i0, rg, i0_err, rg_err, fig
 
     return i0, rg, i0_err, rg_err
 

@@ -10,9 +10,10 @@
 """
 import numpy as np
 
-from bokeh.plotting import figure, output_file, show
+import bokeh.plotting
+import bokeh.io
 # from bokeh.palettes import Colorblind8 as palette
-from bokeh.layouts import gridplot
+import bokeh.layouts
 
 
 def define_solarized(n=11):
@@ -73,7 +74,6 @@ def plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg, rg_err, dlog_iq,
     plot data and a fit line
     '''
 
-    output_file(save_fname)
     n_round = 6
 
     i0 = round_to_n(i0, n=n_round)
@@ -91,7 +91,7 @@ def plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg, rg_err, dlog_iq,
     title = '{}, I(0) = {}+/-{}, Rg = {}+/-{}, q-range: [{}, {}]'.format(
         save_fname.split('.')[0], i0, i0_err, rg, rg_err, q_range[0],
         q_range[1])
-    p = figure(title=title, x_axis_label='q^2 (1/A^2)',
+    p = bokeh.plotting.figure(title=title, x_axis_label='q^2 (1/A^2)',
                y_axis_label='ln(I(q))', width=472, height=400)
 
     p.line(q2, fit_line, color=palette[0], legend="fit", line_width=2)
@@ -104,20 +104,20 @@ def plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg, rg_err, dlog_iq,
     else:
         NotImplemented
 
-    show(p)
-
+    bokeh.io.output_file(save_fname)
+    bokeh.io.save(p)
+    bokeh.io.reset_output()
+    return p
 
 def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
     '''
     plot data using linear, log, and Guinier axes
     '''
 
-    output_file(save_fname)
-
-    p0 = figure(title='linear', x_axis_label='q (1/A)', y_axis_label='I(q)')
+    p0 = bokeh.plotting.figure(title='linear', x_axis_label='q (1/A)', y_axis_label='I(q)')
     errorbar(p0, q, iq, yerr=diq, color=palette[1])
 
-    p1 = figure(title='log', x_axis_label='q (1/A)', y_axis_label='I(q)',
+    p1 = bokeh.plotting.figure(title='log', x_axis_label='q (1/A)', y_axis_label='I(q)',
                 x_axis_type='log', y_axis_type='log',
                 # x_range=p0.x_range, y_range=p0.y_range
                 )
@@ -126,7 +126,7 @@ def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
     x = q ** 2
     y = np.log(iq)
 
-    p2 = figure(title='Guinier', x_axis_label='q^2 (1/A^2)',
+    p2 = bokeh.plotting.figure(title='Guinier', x_axis_label='q^2 (1/A^2)',
                 y_axis_label='ln(I(q))')
 
     dy_skew = (np.log(iq + diq) - np.log(iq - diq)) / 2.0
@@ -141,9 +141,12 @@ def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
     r0 = [p0, p1]
     r1 = [p2]  # , p3]
 
-    layout = gridplot([r0, r1])
+    layout = bokeh.layouts.gridplot([r0, r1])
 
-    show(layout)
+    bokeh.io.output_file(save_fname)
+    bokeh.io.save(layout)
+    bokeh.io.reset_output()
+    return layout
 
 
 solarized = define_solarized()
