@@ -211,16 +211,55 @@ def match_lstsq(in_data, rf_data):
     return mt_data, scale, offset, x2
 
 
-def get_x2(rf_data, mt_data, dof=None):
-    x2, _ = get_x2_components(rf_data, mt_data, dof=dof)
+def get_x2(rf_data, md_data, dof=None):
+    """
+    determine the chi-square value between reference and model data
+
+    Parameters
+    ----------
+    rf_data:
+        reference data for comparing the model data (should be Nx3 np.array)
+    md_data:
+        model data to compare to the reference data (should be Nx2 np.array)
+
+    Returns
+    -------
+    x2: chi-square value
+
+    See also
+    --------
+    get_x2_components, get_r
+    """
+
+    x2, _ = get_x2_components(rf_data, md_data, dof=dof)
 
     return x2
 
 
-def get_x2_components(rf_data, mt_data, dof=None):
-    diff = mt_data[:, 1] - rf_data[:, 1]
+def get_x2_components(rf_data, md_data, dof=None):
+    """
+    determine the chi-square value between reference and model data
+
+    Parameters
+    ----------
+    rf_data:
+        reference data for comparing the model data (should be Nx3 np.array)
+    md_data:
+        model data to compare to the reference data (should be Nx2 np.array)
+
+    Returns
+    -------
+    x2:         chi-square value
+    components: chi-square value components from each data point
+
+    See also
+    --------
+    get_x2_components, get_r
+    """
+
+    diff = md_data[:, 1] - rf_data[:, 1]
     diff2 = diff * diff
-    er2 = rf_data[:, 2] * rf_data[:, 2]
+    er2 = rf_data[:, 2] ** 2
     if not dof:
         dof = len(rf_data)
     components = (diff2 / er2) / dof
@@ -229,15 +268,53 @@ def get_x2_components(rf_data, mt_data, dof=None):
     return x2, components
 
 
-def get_r(rf_data, mt_data):
-    r, _ = get_r_components(rf_data, mt_data)
+def get_r(rf_data, md_data):
+    """
+    determine the chi-square value between reference and model data
+
+    Parameters
+    ----------
+    rf_data:
+        reference data for comparing the model data (should be Nx3 np.array)
+    md_data:
+        model data to compare to the reference data (should be Nx2 np.array)
+
+    Returns
+    -------
+    r:          R value
+
+    See also
+    --------
+    get_x2_components, get_r
+    """
+    r, _ = get_r_components(rf_data, md_data)
 
     return r
 
 
-def get_r_components(rf_data, mt_data):
-    # R value as defined by doi: 10.1042/bj2670203
-    diff = np.abs(mt_data[:, 1] - rf_data[:, 1])
+def get_r_components(rf_data, md_data):
+    """
+    determine the R value between a referenc and model data set,
+    as defined by doi: 10.1042/bj2670203
+
+    Parameters
+    ----------
+    rf_data:
+        reference data for comparing the model data (should be Nx3 np.array)
+    md_data:
+        model data to compare to the reference data (should be Nx2 np.array)
+
+    Returns
+    -------
+    r:          R value
+    components: R value components from each data point
+
+    See also
+    --------
+    get_x2_components, get_r
+    """
+    #
+    diff = np.abs(md_data[:, 1] - rf_data[:, 1])
     norm = np.abs(rf_data[:, 1]).sum()
     components = diff / norm
     r = components.sum()
