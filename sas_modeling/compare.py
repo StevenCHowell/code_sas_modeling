@@ -18,7 +18,7 @@ import logging
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 
-def interp_data(data, x_grid):
+def interp_data(x_data, y_data, new_x_data):
     """
     interpolate data to a new x-grid
 
@@ -36,16 +36,15 @@ def interp_data(data, x_grid):
     new_data: interpolated data (np.array with dimensions LxM)
     """
 
-    n_data = data.shape[1] - 1
-    n_x = len(x_grid)
-    new_data = np.empty([n_x, n_data+1], order='f')
-    new_data[:, 0] = x_grid
+    n_y_data = y_data.shape[1]
+    n_x = len(new_x_data)
+    new_y_data = np.empty([n_x, n_y_data], order='f')
 
-    for i in range(n_data):
-        interp_data = interpolate.splrep(data[:, 0], data[:, i])
-        new_data[:, i] = interpolate.splev(x_grid, interp_data)
+    for i in range(n_y_data):
+        interp_data = interpolate.splrep(x_data, y_data[:, i])
+        new_y_data[:, i] = interpolate.splev(new_x_data, interp_data)
 
-    return new_data
+    return new_x_data, new_y_data
 
 
 def scale(in_data, rf_data):
@@ -245,7 +244,8 @@ def get_x2_components(rf_data, md_data, dof=None):
     rf_data:
         reference data for comparing the model data (should be Nx3 np.array)
     md_data:
-        model data to compare to the reference data (should be Nx2 np.array)
+        model data to compare to the reference data (should be a
+        length N np.array)
 
     Returns
     -------
@@ -257,13 +257,15 @@ def get_x2_components(rf_data, md_data, dof=None):
     get_x2_components, get_r
     """
 
-    diff = md_data[:, 1] - rf_data[:, 1]
+    diff = md_data - rf_data[:, 1]
     diff2 = diff * diff
     er2 = rf_data[:, 2] ** 2
     if not dof:
         dof = len(rf_data)
     components = (diff2 / er2) / dof
     x2 = components.sum()
+
+    assert np.isfinite(x2), 'x2 not finite'
 
     return x2, components
 
@@ -302,7 +304,8 @@ def get_r_components(rf_data, md_data):
     rf_data:
         reference data for comparing the model data (should be Nx3 np.array)
     md_data:
-        model data to compare to the reference data (should be Nx2 np.array)
+        model data to compare to the reference data (should be a
+        length N np.array)
 
     Returns
     -------
@@ -313,8 +316,8 @@ def get_r_components(rf_data, md_data):
     --------
     get_x2_components, get_r
     """
-    #
-    diff = np.abs(md_data[:, 1] - rf_data[:, 1])
+
+    diff = np.abs(md_data - rf_data[:, 1])
     norm = np.abs(rf_data[:, 1]).sum()
     components = diff / norm
     r = components.sum()
