@@ -8,12 +8,21 @@
 00000000011111111112222222222333333333344444444445555555555666666666677777777778
 12345678901234567890123456789012345678901234567890123456789012345678901234567890
 """
+import logging
 import numpy as np
+import pandas as pd
 
 import bokeh.plotting
 import bokeh.io
 # from bokeh.palettes import Colorblind8 as palette
 import bokeh.layouts
+
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+
+try:
+    import datashader
+except ImportError:
+    logging.warning('datashader failed to import, `ds_lines` not available')
 
 
 def define_solarized(n=11):
@@ -149,6 +158,47 @@ def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
     bokeh.io.save(layout)
     bokeh.io.reset_output()
     return layout
+
+
+def ds_lines(x_array, y_arrays):
+    """
+    plot many lines using datashader
+
+    Parameters
+    ----------
+    x_array: array of x-values (should be a one dimensional np.array of length
+             N)
+    y_arrays: M different arrays of y-values (should be a np.array with
+              dimensions
+        NxM) L)
+
+    Returns
+    -------
+    img: datashader image object
+    """
+    # create some data worth plotting
+    n_points, n_arrays = y_arrays.shape
+    assert n_points == len(x_array), 'mismatched x/y-data'
+
+    dfs = []
+    split = pd.DataFrame({'x': [np.nan]})
+    for i in range(n_arrays):
+            x = x_array
+            y = y_arrays[:, i]
+            df = pd.DataFrame({'x': x, 'y': y})
+            dfs.append(df)
+            dfs.append(split)
+
+    df = pd.concat(dfs, ignore_index=True)
+
+    x_range = x_array.min(), x_array.max()
+    y_range = y_arrays.min(), y_arrays.max()
+
+    canvas = datashader.Canvas(x_range=x_range, y_range=y_range,
+                               plot_height=300, plot_width=300)
+    agg = canvas.line(df, 'x', 'y', datashader.count())
+    img = datashader.transfer_functions.shade(agg, how='eq_hist')
+    return img
 
 
 solarized = define_solarized()
