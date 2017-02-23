@@ -92,7 +92,7 @@ def plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg, rg_err, dlog_iq,
         save_fname.split('.')[0], i0, i0_err, rg, rg_err, q_range[0],
         q_range[1])
     p = bokeh.plotting.figure(title=title, x_axis_label='q^2 (1/A^2)',
-               y_axis_label='ln(I(q))', width=472, height=400)
+                              y_axis_label='ln(I(q))', width=472, height=400)
 
     p.line(q2, fit_line, color=palette[0], legend="fit", line_width=2)
 
@@ -109,25 +109,27 @@ def plot_guinier_fit(q2, log_iq, fit_line, i0, i0_err, rg, rg_err, dlog_iq,
     bokeh.io.reset_output()
     return p
 
+
 def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
     '''
     plot data using linear, log, and Guinier axes
     '''
 
-    p0 = bokeh.plotting.figure(title='linear', x_axis_label='q (1/A)', y_axis_label='I(q)')
+    p0 = bokeh.plotting.figure(title='linear', x_axis_label='q (1/A)',
+                               y_axis_label='I(q)')
     errorbar(p0, q, iq, yerr=diq, color=palette[1])
 
-    p1 = bokeh.plotting.figure(title='log', x_axis_label='q (1/A)', y_axis_label='I(q)',
-                x_axis_type='log', y_axis_type='log',
-                # x_range=p0.x_range, y_range=p0.y_range
-                )
+    p1 = bokeh.plotting.figure(title='log', x_axis_label='q (1/A)',
+                               y_axis_label='I(q)', x_axis_type='log',
+                               y_axis_type='log',
+                               )
     errorbar(p1, q, iq, yerr=diq, color=palette[1])
 
     x = q ** 2
     y = np.log(iq)
 
     p2 = bokeh.plotting.figure(title='Guinier', x_axis_label='q^2 (1/A^2)',
-                y_axis_label='ln(I(q))')
+                               y_axis_label='ln(I(q))')
 
     dy_skew = (np.log(iq + diq) - np.log(iq - diq)) / 2.0
 
