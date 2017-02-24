@@ -21,6 +21,7 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 try:
     import datashader
+    from datashader.bokeh_ext import InteractiveImage
 except ImportError:
     logging.warning('datashader failed to import, `ds_lines` not available')
 
@@ -160,9 +161,9 @@ def plot_iq_and_guinier(q, iq, diq, save_fname='I(q)_and_guinier.html'):
     return layout
 
 
-def ds_lines(x_array, y_arrays):
+def np_to_ds_format(x_array, y_arrays):
     """
-    plot many lines using datashader
+    reformat data for plotting in DataShader
 
     Parameters
     ----------
@@ -174,31 +175,63 @@ def ds_lines(x_array, y_arrays):
 
     Returns
     -------
-    img: datashader image object
+    ds_df: datashader DataFrame
     """
-    # create some data worth plotting
+
     n_points, n_arrays = y_arrays.shape
     assert n_points == len(x_array), 'mismatched x/y-data'
 
     dfs = []
     split = pd.DataFrame({'x': [np.nan]})
     for i in range(n_arrays):
-            x = x_array
-            y = y_arrays[:, i]
-            df = pd.DataFrame({'x': x, 'y': y})
-            dfs.append(df)
-            dfs.append(split)
+        x = x_array
+        y = y_arrays[:, i]
+        df = pd.DataFrame({'x': x, 'y': y})
+        dfs.append(df)
+        dfs.append(split)
 
-    df = pd.concat(dfs, ignore_index=True)
+    ds_df = pd.concat(dfs, ignore_index=True)
+    return ds_df
 
-    x_range = x_array.min(), x_array.max()
-    y_range = y_arrays.min(), y_arrays.max()
 
-    canvas = datashader.Canvas(x_range=x_range, y_range=y_range,
-                               plot_height=300, plot_width=300)
-    agg = canvas.line(df, 'x', 'y', datashader.count())
-    img = datashader.transfer_functions.shade(agg, how='eq_hist')
-    return img
+def ds_lines(ds_df, plot=None):
+    """
+    plot many lines using datashader
+
+    Parameters
+    ----------
+    ds_df: see np_to_ds_format
+
+    Returns
+    -------
+    img: datashader image object
+    """
+
+    x_range = ds_df['x'].min(), ds_df['x'].max()
+    y_range = ds_df['y'].min(), ds_df['y'].max()
+
+    if plot is not None:
+        plot_width = plot.plot_width
+        plot_height = plot.plot_height
+    else:
+        plot_width = 400
+        plot_height = 300
+
+    def plot_data(x_range=x_range, y_range=y_range, plot_height=plot_height,
+                  plot_width=plot_width, aggregator=datashader.count()):
+        canvas = datashader.Canvas(x_range=x_range, y_range=y_range,
+                                   plot_height=plot_height,
+                                   plot_width=plot_width)
+        agg = canvas.line(ds_df, 'x', 'y', aggregator)
+        img = datashader.transfer_functions.shade(agg, how='eq_hist')
+        return img
+
+    if plot is not None:
+        plot.x_range = bokeh.models.Range1d(*x_range)
+        plot.y_range = bokeh.models.Range1d(*y_range)
+        InteractiveImage(plot, plot_data, aggregator=datashader.count())
+    else:
+        return plot_data(x_range, y_range)
 
 
 solarized = define_solarized()
