@@ -71,14 +71,12 @@ def scale(in_data, rf_data):
     match_poly, match_lstsq, scale_offset
 
     """
-    assert (in_data[:, 0] - rf_data[:, 0]).sum() == 0, (
-        'mismatch between input and reference x-grid')
 
     sigma2 = rf_data[:, 2] * rf_data[:, 2]
-    scale = ((rf_data[:, 1] * in_data[:, 1] / sigma2).sum() /
-             (in_data[:, 1] * in_data[:, 1] / sigma2).sum())
+    scale = ((rf_data[:, 1] * in_data / sigma2).sum() /
+             (in_data * in_data / sigma2).sum())
 
-    mt_data = np.vstack([in_data[:, 0], scale * in_data[:, 1]]).T
+    mt_data = scale * in_data
 
     x2 = get_x2(rf_data, mt_data)
 
@@ -108,16 +106,14 @@ def offset(in_data, rf_data):
     match_poly, match_lstsq, scale_offset, scale
 
     """
-    assert (in_data[:, 0] - rf_data[:, 0]).sum() == 0, (
-        'mismatch between input and reference x-grid')
 
     sigma2 = rf_data[:, 2] * rf_data[:, 2]
     a = (rf_data[:, 1] / sigma2).sum()
-    b = (in_data[:, 1] / sigma2).sum()
+    b = (in_data / sigma2).sum()
     c = (1 / sigma2).sum()
     offset = (a - b) / c
 
-    mt_data = np.vstack([in_data[:, 0], in_data[:, 1] + offset]).T
+    mt_data = in_data + offset
 
     x2 = get_x2(rf_data, mt_data)
 
@@ -150,20 +146,18 @@ def scale_offset(in_data, rf_data):
 
     """
     small = 1E-4  # small parameter
-    assert np.allclose((in_data[:, 0] - rf_data[:, 0]).sum(), 0, atol=small), (
-        'mismatch between input and reference x-grid')
 
     sigma2 = rf_data[:, 2] * rf_data[:, 2]
     a = (rf_data[:, 1] / sigma2).sum()
-    b = (in_data[:, 1] / sigma2).sum()
+    b = (in_data / sigma2).sum()
     c = (1 / sigma2).sum()
-    d = (rf_data[:, 1] * in_data[:, 1] / sigma2).sum()
-    e = (in_data[:, 1] * in_data[:, 1] / sigma2).sum()
+    d = (rf_data[:, 1] * in_data / sigma2).sum()
+    e = (in_data * in_data / sigma2).sum()
 
     offset = (a * e - b * d) / (c * e - b * b)
     scale = (c * d - b * a) / (c * e - b * b)
 
-    mt_data = np.vstack([in_data[:, 0], scale * in_data[:, 1] + offset]).T
+    mt_data = scale * in_data + offset
 
     x2 = get_x2(rf_data, mt_data)
 
@@ -197,13 +191,11 @@ def match_lstsq(in_data, rf_data):
     match_poly, scale_offset, scale
 
     """
-    assert (in_data[:, 0] - rf_data[:, 0]).sum() == 0, (
-        'mismatch between input and reference x-grid')
 
     # could implement weights by changeing the second column to be 1/error
-    A = np.vstack([in_data[:, 1], np.ones(len(in_data))]).T
+    A = np.vstack([in_data, np.ones(len(in_data))]).T
     scale, offset = np.linalg.lstsq(A, rf_data[:, 1])[0]
-    mt_data = np.vstack([in_data[:, 0], scale * in_data[:, 1] + offset]).T
+    mt_data = scale * in_data + offset
 
     x2 = get_x2(rf_data, mt_data)
 
