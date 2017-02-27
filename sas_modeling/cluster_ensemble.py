@@ -331,27 +331,93 @@ def load_iq_data(saxs_files):
     return iq_data
 
 
+def analyze_clustering(cluster_dir, file_dir, file_ext, pdb_fname):
+    '''
+    evaluate the percent difference between clustered data
+    '''
+    run_files = find_data_files(file_dir, file_ext)
+    # n_samples = len(run_files)
+
+    cluster_fname = os.path.join(cluster_dir, 'clusters.dat')
+    clusters = np.loadtxt(cluster_fname, dtype=np.int)
+
+    df = pd.DataFrame({'fname': run_files, 'cluster': clusters})
+
+    if file_ext[-2:] == 'iq':
+        data = load_iq_data(run_files)
+
+    elif file_ext[-2:] == 'pr':
+        data = load_pr_data(run_files)
+
+    unique_clusters = set(clusters).remove(0)
+
+    max_percent_difference
+    for cluster_id in unique_clusters:
+        c_data = data[df[df['cluster'] == cluster_id].index]
+
+
+
+    return
+
+def compare_data(data1, data2):
+    '''
+    calculate the percend difference between two data sets
+    '''
+    if np.sum(data2 > 0) > np.sum(data1 > 0):
+        switch = data1
+        data1 = data2
+        data2 = switch
+
+    mask = data1 > 0
+    data1 = data1[mask]
+    data2 = data2[mask]
+
+
+    return np.mean(np.abs(data1 - data2) / data1)
+
+
+def test(d1, d2):
+    return np.mean(np.abs(d1 - d2) / d1)
+
+
+
 if __name__ == '__main__':
     home_dir = os.path.expanduser("~")
     run_dir = 'data/scratch/sas_clustering'
-
     pdb_fname = os.path.join(home_dir, run_dir, 'centered_mab.pdb')
-    dcd_fname = os.path.join(home_dir, run_dir, 'to_test2.dcd')
 
-    iq_dir = 'sascalc/xray'
-    iq_dir = os.path.join(home_dir, run_dir, iq_dir)
-    iq_ext = '*.iq'
-    main(iq_dir, iq_ext, pdb_fname, dcd_fname)
-    main(iq_dir, iq_ext, pdb_fname, dcd_fname, rescale=True)
-    main(iq_dir, iq_ext, pdb_fname, dcd_fname, dbscan=True)
-    main(iq_dir, iq_ext, pdb_fname, dcd_fname, rescale=True, dbscan=True)
+    analyze = True
+    if analyze:
 
-    pr_dir = 'pr'
-    pr_dir = os.path.join(home_dir, run_dir, pr_dir)
-    pr_ext = '*.pr'
-    main(pr_dir, pr_ext, pdb_fname, dcd_fname)
-    main(pr_dir, pr_ext, pdb_fname, dcd_fname, rescale=True)
-    main(pr_dir, pr_ext, pdb_fname, dcd_fname, dbscan=True)
-    main(pr_dir, pr_ext, pdb_fname, dcd_fname, rescale=True, dbscan=True)
+        iq_dir = 'sascalc/xray'
+        pr_dir = 'pr'
+        file_ext = '*.pr'
+
+        cluster_dir = 'pr_raw_dbscan'
+
+        cluster_dir = os.path.join(home_dir, run_dir, pr_dir, cluster_dir)
+        file_dir = os.path.join(home_dir, run_dir, pr_dir)
+
+        analyze_clustering(cluster_dir, file_dir, file_ext, pdb_fname)
+
+    test = False
+    if test:
+        dcd_fname = os.path.join(home_dir, run_dir, 'to_test2.dcd')
+
+        iq_dir = 'sascalc/xray'
+        iq_dir = os.path.join(home_dir, run_dir, iq_dir)
+        iq_ext = '*.iq'
+        main(iq_dir, iq_ext, pdb_fname, dcd_fname)
+        main(iq_dir, iq_ext, pdb_fname, dcd_fname, rescale=True)
+        main(iq_dir, iq_ext, pdb_fname, dcd_fname, dbscan=True)
+        main(iq_dir, iq_ext, pdb_fname, dcd_fname, rescale=True, dbscan=True)
+
+        pr_dir = 'pr'
+        pr_dir = os.path.join(home_dir, run_dir, pr_dir)
+        pr_ext = '*.pr'
+        main(pr_dir, pr_ext, pdb_fname, dcd_fname)
+        main(pr_dir, pr_ext, pdb_fname, dcd_fname, rescale=True)
+        main(pr_dir, pr_ext, pdb_fname, dcd_fname, dbscan=True)
+        main(pr_dir, pr_ext, pdb_fname, dcd_fname, rescale=True, dbscan=True)
 
     logging.info('\m/ >.< \m/')
