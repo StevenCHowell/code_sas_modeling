@@ -349,31 +349,41 @@ def analyze_clustering(cluster_dir, file_dir, file_ext, pdb_fname):
     elif file_ext[-2:] == 'pr':
         data = load_pr_data(run_files)
 
-    unique_clusters = set(clusters).remove(0)
+    unique_clusters = set(clusters)
+    unique_clusters.remove(0)
+    n_clusters = len(unique_clusters)
 
-    max_percent_difference
-    for cluster_id in unique_clusters:
+    max_perc_diff = np.empty((n_clusters, 2))
+    cluster_perc_diff = []
+    for k, cluster_id in enumerate(unique_clusters):
         c_data = data[df[df['cluster'] == cluster_id].index]
+        n = len(c_data)
+        perc_diff = np.zeros((n, n))
+        for i in range(n):
+            for j in range(i+1, n):
+                perc_diff[i, j] = compare_data(c_data[i], c_data[j])
+        cluster_perc_diff.append(perc_diff)
+        max_perc_diff[k] = [cluster_id, perc_diff.max()]
 
+    out_fname = os.path.join(cluster_dir, 'max_perc_diff.dat')
+    np.savetxt(out_fname, max_perc_diff, fmt=['%d', '%f'], header='id, max percent difference')
 
-
-    return
 
 def compare_data(data1, data2):
     '''
     calculate the percend difference between two data sets
     '''
-    if np.sum(data2 > 0) > np.sum(data1 > 0):
-        switch = data1
-        data1 = data2
-        data2 = switch
+    # if np.sum(data2 > 0) > np.sum(data1 > 0):
+        # switch = data1
+        # data1 = data2
+        # data2 = switch
 
     mask = data1 > 0
     data1 = data1[mask]
     data2 = data2[mask]
+    data_mean = (data1 + data2) / 2.0
 
-
-    return np.mean(np.abs(data1 - data2) / data1)
+    return np.mean(np.abs(data1 - data2) / data_mean)
 
 
 def test(d1, d2):
@@ -393,12 +403,18 @@ if __name__ == '__main__':
         pr_dir = 'pr'
         file_ext = '*.pr'
 
-        cluster_dir = 'pr_raw_dbscan'
+        cluster_dirs = [
+            'pr_raw_dbscan',
+            'pr_raw_hdbscan',
+            'pr_scale_dbscan',
+            'pr_scale_hdbscan',
+        ]
 
-        cluster_dir = os.path.join(home_dir, run_dir, pr_dir, cluster_dir)
-        file_dir = os.path.join(home_dir, run_dir, pr_dir)
+        for cluster_dir in cluster_dirs:
+            cluster_dir = os.path.join(home_dir, run_dir, pr_dir, cluster_dir)
+            file_dir = os.path.join(home_dir, run_dir, pr_dir)
 
-        analyze_clustering(cluster_dir, file_dir, file_ext, pdb_fname)
+            analyze_clustering(cluster_dir, file_dir, file_ext, pdb_fname)
 
     test = False
     if test:
