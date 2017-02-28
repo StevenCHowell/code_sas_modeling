@@ -10,10 +10,76 @@
 '''
 from __future__ import absolute_import, division, print_function
 
-import numpy as np
 import logging
 
+import numpy as np
+import scipy.spatial.distance
+
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+
+
+class circle:
+    def __init__(self, radius, center):
+        self.radius = radius
+        self.center = center
+
+    def perimiter(self):
+        return 2 * np.pi * self.r
+
+    def area(self):
+        return np.pi * self.r ** 2
+
+    def in_or_out(self, points):
+        distances = scipy.spatial.distance.cdist(self.center, points)
+        in_mask = distance < self.r
+        return in_mask
+
+
+class ellipse:
+    def __init__(self, a, b, center=np.array([0, 0]),
+                 orientation=np.array([1, 0])):
+        self.a = a
+        self.b = b
+        self.f = np.sqrt(a**2 - b**2)
+        self.center = center
+        self.orientation = np.linalg.norm(orientation)
+        self.f1 = self.center + self.orientation * f
+        self.f2 = self.center - self.orientation * f
+
+    def area(self):
+        return np.pi * self.a * self.b
+
+    def in_or_out(self, points):
+        distance_f1 = scipy.spatial.distance.cdist(self.f1, points)
+        distance_f2 = scipy.spatial.distance.cdist(self.f2, points)
+        distance = distance_f1 + distance_d2
+        in_mask = distance < 2 * a
+        return in_mask
+
+
+class rectangle:
+    def __init__(self, s1, s2, center=np.array([0, 0]),
+                 orientation=np.array([1, 0])):
+        self.s1 = s1
+        self.s2 = s2
+        self.center = center
+        self.orientation = np.linalg.norm(orientation)
+
+    def area(self):
+        return self.s1 * self.s2
+
+    def in_or_out(self, points):
+        axis = self.center + self.orientation
+        d_parl = points.dot(axis.T)
+        p_mag = np.linalg.norm(points)
+        theta = np.arccos(d_parl/p_mag)
+        d_perp = p_mag * np.sin(theta)
+
+        in_mask_par = d_parl < self.s1
+        in_mask_per = d_perp < self.s2
+        in_mask = in_mask_par & in_mask_per
+
+        return in_mask
 
 
 def sphere(r, q, p_scat, p_sol, scale=1.0, bkg=0.0):
