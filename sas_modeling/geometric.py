@@ -35,9 +35,6 @@ class Ellipse:
         self.f1 = self.center + self.orientation * self.f
         self.f2 = self.center - self.orientation * self.f
 
-    def __get__(self, obj, objtype):
-        return self.val
-
     def area(self):
         return np.pi * self.a * self.b
 
@@ -46,7 +43,9 @@ class Ellipse:
         distance_f2 = scipy.spatial.distance.cdist(self.f2, points)
         distance = distance_f1 + distance_f2
         in_mask = distance.reshape(-1) < 2 * self.a
-        return in_mask
+
+        self.in_points = points[in_mask]
+        self.out_points = points[np.invert(in_mask)]
 
 
 class Circle(Ellipse):
@@ -77,10 +76,10 @@ class Rectangle:
         return self.s1 * self.s2
 
     def in_or_out(self, points):
-        points = points - self.center
-        d_parl = points.dot(self.orientation.T)
-        p_mag = np.linalg.norm(points, axis=1)
-        if np.alltrue(points[p_mag.argmin()] == 0):
+        v_points = points - self.center
+        d_parl = v_points.dot(self.orientation.T)
+        p_mag = np.linalg.norm(v_points, axis=1)
+        if np.alltrue(v_points[p_mag.argmin()] == 0):
             p_mag[p_mag.argmin()] = 1.0
 
         arg = d_parl / p_mag
@@ -105,7 +104,8 @@ class Rectangle:
         in_mask_per = d_perp < self.s2
         in_mask = in_mask_par & in_mask_per
 
-        return in_mask
+        self.in_points = points[in_mask]
+        self.out_points = points[np.invert(in_mask)]
 
 
 class Square(Rectangle):
