@@ -46,6 +46,7 @@ class Ellipse:
 
         self.in_points = points[in_mask]
         self.out_points = points[np.invert(in_mask)]
+        self.n_in = len(self.in_points)
 
 
 class Circle(Ellipse):
@@ -106,6 +107,7 @@ class Rectangle:
 
         self.in_points = points[in_mask]
         self.out_points = points[np.invert(in_mask)]
+        self.n_in = len(self.in_points)
 
 
 class Square(Rectangle):
