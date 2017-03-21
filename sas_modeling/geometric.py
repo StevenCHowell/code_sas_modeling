@@ -19,8 +19,11 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 
 class Ellipse:
+    def __repr__(self):
+        return 'ellipse with center: {}, a: {}, b {}'.format(self.center,
+                                                             self.a, self.b)
+
     def __init__(self, a, b, center=[0, 0], orientation=[1, 0]):
-        self.shape = 'ellipse'
         if a > b:
             self.a = a
             self.b = b
@@ -30,7 +33,7 @@ class Ellipse:
             self.b = a
 
         self.f = np.sqrt(self.a ** 2 - self.b ** 2)
-        self.center = np.array(center).reshape(1, 2)
+        self.center = np.array(center).reshape(2, )
         self.orientation = orientation / np.linalg.norm(orientation)
         self.f1 = self.center + self.orientation * self.f
         self.f2 = self.center - self.orientation * self.f
@@ -50,12 +53,15 @@ class Ellipse:
 
 
 class Circle(Ellipse):
+    def __repr__(self):
+        return 'circle centered at {} with r={}'.format(self.center,
+                                                        self.radius)
+
     def __init__(self, radius, center=[0, 0]):
-        self.shape = 'circle'
         self.radius = radius
         self.a = radius
         self.b = radius
-        self.center = np.array(center).reshape(1, 2)
+        self.center = np.array(center).reshape(2, )
         self.orientation = np.array([1, 0])
         self.f = 0.0  # np.sqrt(self.a ** 2 - self.b ** 2)
         self.f1 = self.center + self.orientation * self.f
@@ -66,15 +72,19 @@ class Circle(Ellipse):
 
 
 class Rectangle:
-    def __init__(self, s1, s2, center=[0, 0], orientation=[1, 0]):
-        self.shape = 'rectangle'
-        self.s1 = s1
-        self.s2 = s2
+    def __repr__(self):
+        return ('rectangle with center: {}, side 1: {}, side 2: {}, and '
+                'orientation: {}'.format(self.center, self.side1,
+                                         self.side2, self.orientation))
+
+    def __init__(self, side1, side2, center=[0, 0], orientation=[1, 0]):
+        self.side1 = side1
+        self.side2 = side2
         self.center = np.array(center)
         self.orientation = orientation / np.linalg.norm(orientation)
 
     def area(self):
-        return self.s1 * self.s2
+        return self.side1 * self.side2
 
     def in_or_out(self, points):
         v_points = points - self.center
@@ -101,8 +111,8 @@ class Rectangle:
         theta = np.arccos(arg)
         d_perp = p_mag * np.sin(theta)
 
-        in_mask_par = np.abs(d_parl) < self.s1
-        in_mask_per = d_perp < self.s2
+        in_mask_par = np.abs(d_parl) < self.side1
+        in_mask_per = d_perp < self.side2
         in_mask = in_mask_par & in_mask_per
 
         self.in_points = points[in_mask]
@@ -111,11 +121,14 @@ class Rectangle:
 
 
 class Square(Rectangle):
-    def __init__(self, s, center=[0,0], orientation=[1,0]):
-        self.shape = 'square'
-        self.s = s
-        self.s1 = s
-        self.s2 = s
+    def __repr__(self):
+        return 'square with center: {}, side: {}, and orientation: {}'.format(
+            self.center, self.side, self.orientation)
+
+    def __init__(self, side, center=[0,0], orientation=[1,0]):
+        self.side = side
+        self.side1 = side
+        self.side2 = side
         self.center = np.array(center)
         orientation = np.array(orientation)
         self.orientation = orientation / np.linalg.norm(orientation)
@@ -184,7 +197,7 @@ if __name__=="__main__":
 
             n_in = in_points.sum()
             n_out = out_points.sum()
-            bokeh.plotting.output_file('square_{}.html'.format(s.s))
+            bokeh.plotting.output_file('square_{}.html'.format(s.side))
 
         elif shape == 'rectangle':
             r = Rectangle(19, 14, center=[30, 60], orientation=[-1, 3])  #, center=[0.1, 0.1])
@@ -195,7 +208,8 @@ if __name__=="__main__":
 
             n_in = in_points.sum()
             n_out = out_points.sum()
-            bokeh.plotting.output_file('reccangle_{}_{}.html'.format(r.s1, r.s2))
+            bokeh.plotting.output_file('reccangle_{}_{}.html'.format(
+                r.side1, r.side2))
 
         bokeh.plotting.output_file('shapes.html')
 
