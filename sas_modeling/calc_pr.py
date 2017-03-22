@@ -39,7 +39,7 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir='', restart=False):
         full_dcd_fname = os.path.join(in_dir, dcd_fname)
         assert os.path.exists(full_dcd_fname), 'No such file: {}'.format(
             full_dcd_fname)
-        dcd_file = mol.open_dcd_read(os.path.join(in_dir, full_dcd_fname))
+        dcd_file = mol.open_dcd_read(full_dcd_fname)
         n_frames = dcd_file[2]
         out_prefix = dcd_fname[:-4]
 
