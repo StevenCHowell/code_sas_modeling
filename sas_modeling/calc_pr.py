@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+# coding:utf-8
+'''
+    Author:  Steven C. Howell --<steven.howell@nist.gov>
+    Purpose: calculate the pair distance distribution, P(r)
+    Created: 02/07/2017
+
+00000000011111111112222222222333333333344444444445555555555666666666677777777778
+12345678901234567890123456789012345678901234567890123456789012345678901234567890
+'''
 from __future__ import absolute_import, division, print_function
 
 import errno
@@ -9,7 +19,7 @@ import time
 import numpy as np
 from scipy.spatial.distance import pdist
 
-from sasmol import sasmol  # https://github.com/madscatt/sasmol
+from sasmol import system  # https://github.com/madscatt/sasmol
 
 import numba
 
@@ -23,8 +33,7 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir='', restart=False):
     full_pdb_fname = os.path.join(in_dir, pdb_fname)
     assert os.path.exists(full_pdb_fname), 'No such file: {}'.format(
         full_pdb_fname)
-    mol = sasmol.SasMol(0)
-    mol.read_pdb(full_pdb_fname)
+    mol = system.Molecule(full_pdb_fname)
 
     if dcd_fname:
         full_dcd_fname = os.path.join(in_dir, dcd_fname)
@@ -62,10 +71,13 @@ def main(pdb_fname, dcd_fname='', in_dir='', out_dir='', restart=False):
         np.savetxt(out_fname, pr, fmt='%d', delimiter=',')
 
     toc = time.time() - tic
-    logging.info('calculated P(r) for {} structures in {} s'.format(
-        n_frames-n_start, toc))
-    logging.info('{} s for each structure'.format(toc/(n_frames-n_start)))
-
+    if n_start < n_frames:
+        logging.info('calculated P(r) for {} structures in {} s'.format(
+            n_frames-n_start, toc))
+        logging.info('{} s for each structure'.format(toc/(n_frames-n_start)))
+    else:
+        logging.info('Output already exists. To recalculate, '
+                     'run using `restart=False``')
     mol.close_dcd_read(dcd_file[0])
 
 
@@ -112,9 +124,8 @@ def mkdir_p(path):
 
 if __name__ == '__main__':
     pdb_fname = 'new_nl1_nrx1b_00001.pdb'
-    dcd_fname = 'new_nl1_nrx1b.dcd'
-    # dcd_fname = 'new_nl1_nrx1b_1-5.dcd'
+    dcd_fname = 'new_nl1_nrx1b_1-5.dcd'
     in_dir = '/home/schowell/data/scratch/docking'
-    out_dir = '/home/schowell/data/scratch/docking/pr'
+    out_dir = '/home/schowell/data/scratch/docking/pr_test'
     main(pdb_fname, dcd_fname=dcd_fname, in_dir=in_dir, out_dir=out_dir,
          restart=True)
