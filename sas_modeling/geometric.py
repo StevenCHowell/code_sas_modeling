@@ -2,7 +2,7 @@
 # coding:utf-8
 '''
     Author:  Steven C. Howell --<steven.howell@nist.gov>
-    Purpose: the scattering of a geometric shapes
+    Purpose: definiton of geometric shapes and their scattering
     Created: 02/03/2017
 
 00000000011111111112222222222333333333344444444445555555555666666666677777777778
@@ -20,8 +20,9 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 class Ellipse:
     def __repr__(self):
-        return 'ellipse with center: {}, a: {}, b {}'.format(self.center,
-                                                             self.a, self.b)
+        return ('ellipse with center: {}, a: {}, b: {}, and '
+                'orientation: {}'.format(self.center, self.a, self.b,
+                                         self.orientation))
 
     def __init__(self, a, b, center=[0, 0], orientation=[1, 0]):
         if a > b:
@@ -33,7 +34,7 @@ class Ellipse:
             self.b = a
 
         self.f = np.sqrt(self.a ** 2 - self.b ** 2)
-        self.center = np.array(center).reshape(2, )
+        self.center = np.array(center)
         self.orientation = orientation / np.linalg.norm(orientation)
         self.f1 = self.center + self.orientation * self.f
         self.f2 = self.center - self.orientation * self.f
@@ -42,8 +43,10 @@ class Ellipse:
         return np.pi * self.a * self.b
 
     def in_or_out(self, points):
-        distance_f1 = scipy.spatial.distance.cdist(self.f1, points)
-        distance_f2 = scipy.spatial.distance.cdist(self.f2, points)
+        distance_f1 = scipy.spatial.distance.cdist(self.f1.reshape(1, 2),
+                                                   points)
+        distance_f2 = scipy.spatial.distance.cdist(self.f2.reshape(1, 2),
+                                                   points)
         distance = distance_f1 + distance_f2
         in_mask = distance.reshape(-1) < 2 * self.a
 
@@ -61,7 +64,7 @@ class Circle(Ellipse):
         self.radius = radius
         self.a = radius
         self.b = radius
-        self.center = np.array(center).reshape(2, )
+        self.center = np.array(center)
         self.orientation = np.array([1, 0])
         self.f = 0.0  # np.sqrt(self.a ** 2 - self.b ** 2)
         self.f1 = self.center + self.orientation * self.f
