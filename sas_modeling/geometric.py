@@ -39,6 +39,7 @@ class Ellipse:
         self.f1 = self.center + self.orientation * self.f
         self.f2 = self.center - self.orientation * self.f
 
+    @property
     def area(self):
         return np.pi * self.a * self.b
 
@@ -70,6 +71,7 @@ class Circle(Ellipse):
         self.f1 = self.center + self.orientation * self.f
         self.f2 = self.center - self.orientation * self.f
 
+    @property
     def perimiter(self):
         return 2 * np.pi * self.radius
 
@@ -86,6 +88,7 @@ class Rectangle:
         self.center = np.array(center)
         self.orientation = orientation / np.linalg.norm(orientation)
 
+    @property
     def area(self):
         return self.side1 * self.side2
 
