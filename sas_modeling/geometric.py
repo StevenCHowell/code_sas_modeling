@@ -43,17 +43,31 @@ class Ellipse:
     def area(self):
         return np.pi * self.a * self.b
 
-    def in_or_out(self, points):
+    def _which_are_in(self, points):
         distance_f1 = scipy.spatial.distance.cdist(self.f1.reshape(1, 2),
                                                    points)
-        distance_f2 = scipy.spatial.distance.cdist(self.f2.reshape(1, 2),
+        distance_xf2 = scipy.spatial.distance.cdist(self.f2.reshape(1, 2),
                                                    points)
         distance = distance_f1 + distance_f2
         in_mask = distance.reshape(-1) < 2 * self.a
+        return in_mask
 
+    def in_or_out(self, points):
+        in_mask = self._which_are_in(points)
         self.in_points = points[in_mask]
         self.out_points = points[np.invert(in_mask)]
         self.n_in = len(self.in_points)
+
+    def fill_with_points(self, density):
+        n = np.round(density / self.area)
+        n_in = 0
+        xy_range = 2 * self.a - self.b
+        xy_min = self.center - xy_range
+        while n_in < n:
+            points = np.random.rand(int(1.5 * n), 2)
+            points = points * xy_range + xy_min
+            in_mask = self._which_are_in(points)
+            n_in += in_mask.sum()
 
 
 class Circle(Ellipse):
