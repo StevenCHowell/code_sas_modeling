@@ -46,7 +46,7 @@ class Ellipse:
     def _which_are_in(self, points):
         distance_f1 = scipy.spatial.distance.cdist(self.f1.reshape(1, 2),
                                                    points)
-        distance_xf2 = scipy.spatial.distance.cdist(self.f2.reshape(1, 2),
+        distance_f2 = scipy.spatial.distance.cdist(self.f2.reshape(1, 2),
                                                    points)
         distance = distance_f1 + distance_f2
         in_mask = distance.reshape(-1) < 2 * self.a
@@ -59,15 +59,21 @@ class Ellipse:
         self.n_in = len(self.in_points)
 
     def fill_with_points(self, density):
-        n = np.round(density / self.area)
+        n = np.round(density * self.area).astype(int)
         n_in = 0
-        xy_range = 2 * self.a - self.b
-        xy_min = self.center - xy_range
+        xy_range = 2 * (2.1 * self.a - self.b)
+        xy_min = self.center - xy_range / 2
+        in_points = []
         while n_in < n:
-            points = np.random.rand(int(1.5 * n), 2)
+            n_remaining = n - n_in
+            points = np.random.rand(int(1.7 * n_remaining), 2)
             points = points * xy_range + xy_min
             in_mask = self._which_are_in(points)
             n_in += in_mask.sum()
+            in_points.append(points[in_mask])
+        in_points = np.vstack(in_points)[:n]
+        self.in_points = in_points
+        self.n_in = n
 
 
 class Circle(Ellipse):
@@ -180,6 +186,10 @@ if __name__=="__main__":
     import bokeh.plotting
     import bokeh.layouts # gridplot
     from bokeh.palettes import Dark2_7 as palette
+
+
+    e = Ellipse(50, 50)
+    e.fill_with_points(1)
 
     x = np.arange(-110, 110)
     y = np.arange(-110, 110)
