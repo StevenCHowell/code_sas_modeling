@@ -5,17 +5,22 @@ import sas_modeling.file_io
 import sas_modeling.geometric
 import sas_modeling.make_figures
 
-sasmol_error = ('not available, depends on sasmol: '
-        'https://github.com/madscatt/sasmol')
+sasmol_error = ('sasmol source: https://github.com/madscatt/sasmol')
 
 try:
     import sas_modeling.cluster_ensemble
-except ImportError:
-    print('cluster_ensemble {}'.format(sasmol_error))
+except ImportError as e:
+    print('WARNING: sas_modeling.cluster_ensemble unavailable')
+    print('ImportError: {}'.format(e.message))
+    if 'sasmol' in e.message:
+        print(sasmol_error)
 
 try:
     import sas_modeling.calc_pr
-except ImportError:
-    print('calc_pr {}'.format(sasmol_error))
+except ImportError as e:
+    print('WARNING: sas_modeling.calc_pr unavailable')
+    print('ImportError: {}'.format(e.message))
+    if 'sasmol' in e.message:
+        print(sasmol_error)
 
 del(sasmol_error)
