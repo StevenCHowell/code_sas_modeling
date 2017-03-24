@@ -372,11 +372,23 @@ def compare_data(data1, data2):
     '''
     calculate the percent difference between two data sets
     '''
+    if len(data1.shape) == 1:
+        data1 = data1.reshape(1, -1)
+    if len(data2.shape) == 1:
+        data2 = data2.reshape(1, -1)
 
-    # mask = data1 > 0
+
+    # need to handle the P(r) zeros for all 3 cases
+    # 1. data1 and data2 are both 1D arrays
+    # 2. one of data1 or data2 is 1D and the other is 2D
+    # 3. both of data1 and data2 are 2D
+
     data_mean = (data1 + data2) / 2.0
+    mask = np.abs(data_mean) > 0
+    data_mean = data_mean(mask)
     axis = len(data_mean.shape) - 1  # this accomodates 1D or 2D arrays
-    percent_diff = np.mean(np.abs(data1 - data2) / data_mean, axis=axis)
+    norm_diff = np.abs(data1[mask] - data2[mask]) / data_mean[mask]
+    percent_diff = np.mean(norm_diff, axis=axis)
 
     return percent_diff
 
