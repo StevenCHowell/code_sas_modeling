@@ -23,7 +23,7 @@ import scipy.interpolate
 import numpy as np
 import pandas as pd
 
-import sasmol.sasmol as sasmol
+import sasmol.system as system
 import sas_modeling
 
 logging.basicConfig(format=':', level=logging.DEBUG)
@@ -118,8 +118,7 @@ def create_cluster_dcds(labels, pdb_fname, dcd_fname, output_dir):
     assert os.path.exists(dcd_fname), 'no such file: {}'.format(dcd_fname)
 
     # create a dcd for every cluster with >1 frame
-    mol = sasmol.SasMol(0)
-    mol.read_pdb(pdb_fname)
+    mol = system.Molecule(pdb_fname)
 
     dcd_basename = os.path.basename(dcd_fname)[:-4]
 
@@ -371,19 +370,15 @@ def analyze_clustering(cluster_dir, file_dir, file_ext, pdb_fname):
 
 def compare_data(data1, data2):
     '''
-    calculate the percend difference between two data sets
+    calculate the percent difference between two data sets
     '''
-    # if np.sum(data2 > 0) > np.sum(data1 > 0):
-        # switch = data1
-        # data1 = data2
-        # data2 = switch
 
-    mask = data1 > 0
-    data1 = data1[mask]
-    data2 = data2[mask]
+    # mask = data1 > 0
     data_mean = (data1 + data2) / 2.0
+    axis = len(data_mean.shape) - 1  # this accomodates 1D or 2D arrays
+    percent_diff = np.mean(np.abs(data1 - data2) / data_mean, axis=axis)
 
-    return np.mean(np.abs(data1 - data2) / data_mean)
+    return percent_diff
 
 
 def test(d1, d2):
