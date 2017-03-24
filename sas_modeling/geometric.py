@@ -191,6 +191,9 @@ if __name__=="__main__":
     e = Ellipse(50, 50)
     e.fill_with_points(1)
 
+    c = Circle(30)
+    c.fill_with_points(0.5)
+
     x = np.arange(-110, 110)
     y = np.arange(-110, 110)
     grid_points = np.array(np.meshgrid(x, y)).T.reshape(-1, 2)
@@ -220,7 +223,7 @@ if __name__=="__main__":
 
         elif shape == 'square':
             s = Square(30, center=[-40, 75], orientation=[-1, -5])
-            print(s.area())
+            print(s.area)
 
             in_points = s.in_or_out(grid_points)
             out_points = np.invert(in_points)
@@ -231,7 +234,7 @@ if __name__=="__main__":
 
         elif shape == 'rectangle':
             r = Rectangle(19, 14, center=[30, 60], orientation=[-1, 3])  #, center=[0.1, 0.1])
-            print(r.area())
+            print(r.area)
 
             in_points = r.in_or_out(grid_points)
             out_points = np.invert(in_points)
