@@ -357,18 +357,18 @@ def analyze_clustering(cluster_dir, file_dir, file_ext, pdb_fname):
     for k, cluster_id in enumerate(unique_clusters):
         c_data = data[df[df['cluster'] == cluster_id].index]
         n = len(c_data)
-        perc_diff = np.zeros((n, n))
+        frac_diff = np.zeros((n, n))
         for i in range(n):
             for j in range(i+1, n):
-                perc_diff[i, j] = compare_data(c_data[i], c_data[j])
-        cluster_perc_diff.append(perc_diff)
-        max_perc_diff[k] = [cluster_id, perc_diff.max()]
+                frac_diff[i, j] = get_frac_diff(c_data[i], c_data[j])
+        cluster_perc_diff.append(frac_diff)
+        max_perc_diff[k] = [cluster_id, frac_diff.max()]
 
     out_fname = os.path.join(cluster_dir, 'max_perc_diff.dat')
     np.savetxt(out_fname, max_perc_diff, fmt=['%d', '%f'], header='id, max percent difference')
 
 
-def compare_data(data1, data2):
+def get_frac_diff(data1, data2):
     r'''
     calculate the fractional difference between two data sets
 
@@ -392,17 +392,17 @@ def compare_data(data1, data2):
     1. data1 and data2 are both 1D arrays
     >>> data1 = np.arange(10)
     >>> data2 = np.arange(-9, 1)[::-1]
-    >>> compare_data(data1, data2)
+    >>> get_frac_diff(data1, data2)
     array([ 9.])
 
     # 2. one of data1 or data2 is 1D and the other is 2D
     >>> data2 = np.eye(10)[:3]
-    >>> compare_data(data1, data2)
+    >>> get_frac_diff(data1, data2)
     array([ 2.        ,  1.6       ,  1.66666667])
 
     # 3. both of data1 and data2 are 2D
     >>> data1 = np.ones((3, 10))
-    >>> compare_data(data1, data2)
+    >>> get_frac_diff(data1, data2)
     array([ 1.8,  1.8,  1.8])
 
     '''
@@ -421,9 +421,70 @@ def compare_data(data1, data2):
     return frac_diff
 
 
+def get_euclid_dist(data1, data2):
+    r'''
+    calculate the euclidiean distance between two data sets
+
+    Parameters
+    ----------
+    data1: array_like
+        first data set to use in comparison
+        can be a 1D array of length N or a 2D array of size MxN
+    data2: array_like
+        second data set to use in comparison
+        can be a 1D array of length N or a 2D array of size MxN
+
+    Returns
+    -------
+    euclid_dist
+        the Euclidean distance between data1 and data2
+
+    Examples
+    --------
+    Written to handle 3 possible combinations of data size
+    1. data1 and data2 are both 1D arrays
+    >>> data1 = np.arange(10)
+    >>> data2 = np.arange(-9, 1)[::-1]
+    >>> get_euclid_dist(data1, data2)
+    array([[ 33.76388603]])
+
+    # 2. one of data1 or data2 is 1D and the other is 2D
+    >>> data2 = np.eye(10)[:3]
+    >>> get_euclid_dist(data1, data2)
+    array([[ 16.91153453,  16.85229955,  16.79285562]])
+
+    # 3. both of data1 and data2 are 2D
+    >>> data1 = np.ones((3, 10))
+    >>> get_euclid_dist(data1, data2)
+    array([[ 3.,  3.,  3.]])
+
+    '''
+
+    one_d = False
+    if len(data1.shape) == 1:
+        data1 = data1.reshape(1, -1)
+        one_d = True
+    if len(data2.shape) == 1:
+        data2 = data2.reshape(1, -1)
+        one_d = True
+
+    if one_d:
+        euclid_dist = scipy.spatial.distance.cdist(data1, data2)
+
+    else:
+        n1 = len(data1)
+        n2 = len(data2)
+        assert n1 == n2, 'Inconsistent input size'
+        euclid_dist = np.empty((1, n1))
+        for i in range(n1):
+            dist = scipy.spatial.distance.cdist(data1[i:i+1], data2[i:i+1])
+            euclid_dist[0, i] = dist
+
+    return euclid_dist
+
+
 def test(d1, d2):
     return np.mean(np.abs(d1 - d2) / d1)
-
 
 
 if __name__ == '__main__':
