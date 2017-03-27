@@ -369,28 +369,56 @@ def analyze_clustering(cluster_dir, file_dir, file_ext, pdb_fname):
 
 
 def compare_data(data1, data2):
-    '''
-    calculate the percent difference between two data sets
+    r'''
+    calculate the fractional difference between two data sets
+
+    Parameters
+    ----------
+    data1: array_like
+        first data set to use in comparison
+        can be a 1D array of length N or a 2D array of size MxN
+    data2: array_like
+        second data set to use in comparison
+        can be a 1D array of length N or a 2D array of size MxN
+
+    Returns
+    -------
+    frac_diff
+        the fractional difference between data1 and data2
+
+    Examples
+    --------
+    Written to handle 3 possible combinations of data size
+    1. data1 and data2 are both 1D arrays
+    >>> data1 = np.arange(10)
+    >>> data2 = np.arange(-9, 1)[::-1]
+    >>> compare_data(data1, data2)
+    array([ 9.])
+
+    # 2. one of data1 or data2 is 1D and the other is 2D
+    >>> data2 = np.eye(10)[:3]
+    >>> compare_data(data1, data2)
+    array([ 2.        ,  1.6       ,  1.66666667])
+
+    # 3. both of data1 and data2 are 2D
+    >>> data1 = np.ones((3, 10))
+    >>> compare_data(data1, data2)
+    array([ 1.8,  1.8,  1.8])
+
     '''
     if len(data1.shape) == 1:
         data1 = data1.reshape(1, -1)
     if len(data2.shape) == 1:
         data2 = data2.reshape(1, -1)
 
-
-    # need to handle the P(r) zeros for all 3 cases
-    # 1. data1 and data2 are both 1D arrays
-    # 2. one of data1 or data2 is 1D and the other is 2D
-    # 3. both of data1 and data2 are 2D
-
     data_mean = (data1 + data2) / 2.0
-    mask = np.abs(data_mean) > 0
-    data_mean = data_mean(mask)
+    zero_mask = np.abs(data_mean) == 0
+    data_mean[zero_mask] = 1  # iff d1+d2=0, diff=d1-d2=0, so diff/1=0
     axis = len(data_mean.shape) - 1  # this accomodates 1D or 2D arrays
-    norm_diff = np.abs(data1[mask] - data2[mask]) / data_mean[mask]
-    percent_diff = np.mean(norm_diff, axis=axis)
+    norm_diff = np.abs(data1 - data2) / data_mean
+    frac_diff = np.mean(norm_diff, axis=axis)
 
-    return percent_diff
+    return frac_diff
 
 
 def test(d1, d2):
@@ -399,48 +427,52 @@ def test(d1, d2):
 
 
 if __name__ == '__main__':
-    home_dir = os.path.expanduser("~")
-    run_dir = 'data/scratch/sas_clustering'
-    pdb_fname = os.path.join(home_dir, run_dir, 'centered_mab.pdb')
+    import doctest
+    doctest.testmod()
 
-    analyze = True
-    if analyze:
 
-        iq_dir = 'sascalc/xray'
-        pr_dir = 'pr'
-        file_ext = '*.pr'
+    # home_dir = os.path.expanduser("~")
+    # run_dir = 'data/scratch/sas_clustering'
+    # pdb_fname = os.path.join(home_dir, run_dir, 'centered_mab.pdb')
 
-        cluster_dirs = [
-            'pr_raw_dbscan',
-            'pr_raw_hdbscan',
-            'pr_scale_dbscan',
-            'pr_scale_hdbscan',
-        ]
+    # analyze = True
+    # if analyze:
 
-        for cluster_dir in cluster_dirs:
-            cluster_dir = os.path.join(home_dir, run_dir, pr_dir, cluster_dir)
-            file_dir = os.path.join(home_dir, run_dir, pr_dir)
+        # iq_dir = 'sascalc/xray'
+        # pr_dir = 'pr'
+        # file_ext = '*.pr'
 
-            analyze_clustering(cluster_dir, file_dir, file_ext, pdb_fname)
+        # cluster_dirs = [
+            # 'pr_raw_dbscan',
+            # 'pr_raw_hdbscan',
+            # 'pr_scale_dbscan',
+            # 'pr_scale_hdbscan',
+        # ]
 
-    test = False
-    if test:
-        dcd_fname = os.path.join(home_dir, run_dir, 'to_test2.dcd')
+        # for cluster_dir in cluster_dirs:
+            # cluster_dir = os.path.join(home_dir, run_dir, pr_dir, cluster_dir)
+            # file_dir = os.path.join(home_dir, run_dir, pr_dir)
 
-        iq_dir = 'sascalc/xray'
-        iq_dir = os.path.join(home_dir, run_dir, iq_dir)
-        iq_ext = '*.iq'
-        main(iq_dir, iq_ext, pdb_fname, dcd_fname)
-        main(iq_dir, iq_ext, pdb_fname, dcd_fname, rescale=True)
-        main(iq_dir, iq_ext, pdb_fname, dcd_fname, dbscan=True)
-        main(iq_dir, iq_ext, pdb_fname, dcd_fname, rescale=True, dbscan=True)
+            # analyze_clustering(cluster_dir, file_dir, file_ext, pdb_fname)
 
-        pr_dir = 'pr'
-        pr_dir = os.path.join(home_dir, run_dir, pr_dir)
-        pr_ext = '*.pr'
-        main(pr_dir, pr_ext, pdb_fname, dcd_fname)
-        main(pr_dir, pr_ext, pdb_fname, dcd_fname, rescale=True)
-        main(pr_dir, pr_ext, pdb_fname, dcd_fname, dbscan=True)
-        main(pr_dir, pr_ext, pdb_fname, dcd_fname, rescale=True, dbscan=True)
+    # test = False
+    # if test:
+        # dcd_fname = os.path.join(home_dir, run_dir, 'to_test2.dcd')
 
-    logging.info('\m/ >.< \m/')
+        # iq_dir = 'sascalc/xray'
+        # iq_dir = os.path.join(home_dir, run_dir, iq_dir)
+        # iq_ext = '*.iq'
+        # main(iq_dir, iq_ext, pdb_fname, dcd_fname)
+        # main(iq_dir, iq_ext, pdb_fname, dcd_fname, rescale=True)
+        # main(iq_dir, iq_ext, pdb_fname, dcd_fname, dbscan=True)
+        # main(iq_dir, iq_ext, pdb_fname, dcd_fname, rescale=True, dbscan=True)
+
+        # pr_dir = 'pr'
+        # pr_dir = os.path.join(home_dir, run_dir, pr_dir)
+        # pr_ext = '*.pr'
+        # main(pr_dir, pr_ext, pdb_fname, dcd_fname)
+        # main(pr_dir, pr_ext, pdb_fname, dcd_fname, rescale=True)
+        # main(pr_dir, pr_ext, pdb_fname, dcd_fname, dbscan=True)
+        # main(pr_dir, pr_ext, pdb_fname, dcd_fname, rescale=True, dbscan=True)
+
+    # logging.info('\m/ >.< \m/')
