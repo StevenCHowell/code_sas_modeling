@@ -446,17 +446,17 @@ def get_euclid_dist(data1, data2):
     >>> data1 = np.arange(10)
     >>> data2 = np.arange(-9, 1)[::-1]
     >>> get_euclid_dist(data1, data2)
-    array([[ 33.76388603]])
+    array([ 33.76388603])
 
     # 2. one of data1 or data2 is 1D and the other is 2D
     >>> data2 = np.eye(10)[:3]
     >>> get_euclid_dist(data1, data2)
-    array([[ 16.91153453,  16.85229955,  16.79285562]])
+    array([ 16.91153453,  16.85229955,  16.79285562])
 
     # 3. both of data1 and data2 are 2D
     >>> data1 = np.ones((3, 10))
     >>> get_euclid_dist(data1, data2)
-    array([[ 3.,  3.,  3.]])
+    array([ 3.,  3.,  3.])
 
     '''
 
@@ -480,7 +480,7 @@ def get_euclid_dist(data1, data2):
             dist = scipy.spatial.distance.cdist(data1[i:i+1], data2[i:i+1])
             euclid_dist[0, i] = dist
 
-    return euclid_dist
+    return euclid_dist[0]
 
 
 def test(d1, d2):
