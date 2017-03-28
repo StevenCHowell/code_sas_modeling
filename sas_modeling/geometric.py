@@ -82,6 +82,26 @@ class Ellipse(object):
     >>> np.allclose(pf1 + pf2, 2 * e.a)
     True
 
+    This also works for rotated and offset ellipses
+    >>> c = np.array([5.0, -2.0])
+    >>> e = Ellipse(2.0, 1.0, orientation=[1.0, 1.0], center=c)
+    >>> e.radius(c + [1.0, 1.0])
+    2.0
+    >>> e.radius(c + [-1.0, 1.0])
+    1.0
+
+    For an offset ellipse, demonstrating the radius value indeed satifies
+    the condition that pf1 + pf2 = 2 * a requires taking into account the
+    center point
+    >>> d = np.random.rand(2)
+    >>> d /= np.linalg.norm(d)
+    >>> r = e.radius(d)
+    >>> p = r * (d - c) / np.linalg.norm(d - c)
+    >>> pf1 = np.linalg.norm(e.f1 - c - p)
+    >>> pf2 = np.linalg.norm(e.f2 - c - p)
+    >>> np.allclose(pf1 + pf2, 2 * e.a)
+    True
+
     '''
 
     def __repr__(self):
@@ -274,11 +294,6 @@ def sphere(r, q, p_scat, p_sol, scale=1.0, bkg=0.0):
 
 
 if __name__ == "__main__":
-    e = Ellipse(2, 1)
-    e.radius([1, 0])  # should be a
-    e.radius([0, 1])  # should be b
-    e.radius([1, 1])
-
     import doctest
     doctest.testmod()
 
