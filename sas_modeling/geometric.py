@@ -19,6 +19,61 @@ logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 
 class Ellipse:
+    r'''
+    My numpydoc description of a kind
+    of very exhautive numpydoc format docstring.
+
+    Parameters
+    ----------
+    a : float
+        radius along the semi-major axis
+    b : float
+        radius along the semi-minor axis
+    center : [float, float], optional
+        point at the center of the ellipse
+    orientation : [fload, floadt], optional
+        unit vector along the semi-major axis
+
+    Attributes
+    ----------
+    a : float
+        radius along the semi-major axis
+    b : float
+        radius along the semi-minor axis
+    center : [float, float], optional
+        point at the center of the ellipse
+    orientation : [fload, floadt], optional
+        unit vector along the semi-major axis
+
+    Methods
+    -------
+    area
+        return the area of the ellipse
+    radius(d=[1.0, 1.0])
+        radius along an input direction
+    in_or_out(points)
+        create the `in_points`, `out_points`, and `n_in` points attributes
+        cooresponding to which of the input `points` are inside/outside of
+        the ellipse
+    fill_with_points(density)
+        fill the ellipse with points cooresponding to the input `density`
+
+    Examples
+    --------
+    >>> e = Ellipse(2, 1)
+    >>> e.radius([1, 0])
+    1.0
+    >>> e.radius([0, 1])
+    2.0
+    >>> e.radius([1, 1])
+
+    >>> e.radius([1, np.sqrt(3)])
+
+    >>> e.radius([np.sqrt(3), 1])
+
+
+    '''
+
     def __repr__(self):
         return ('ellipse with center: {}, a: {}, b: {}, and '
                 'orientation: {}'.format(self.center, self.a, self.b,
@@ -35,13 +90,37 @@ class Ellipse:
 
         self.f = np.sqrt(self.a ** 2 - self.b ** 2)
         self.center = np.array(center)
-        self.orientation = orientation / np.linalg.norm(orientation)
+        self._orientation = orientation / np.linalg.norm(orientation)
         self.f1 = self.center + self.orientation * self.f
         self.f2 = self.center - self.orientation * self.f
 
     @property
+    def orientation(self):
+        return self._orientation
+    @orientation.setter
+    def orientation(self, val):
+        self._orientation = val / np.linalg.norm(val)
+
+    @property
     def area(self):
         return np.pi * self.a * self.b
+
+    def radius(self, d):
+        theta = np.arctan(self.orientation[0], self.orientation[1])
+        cos_theta = np.cos(theta)
+        sin_theta = np.sin(theta)
+
+        d_p = d - self.center
+        R = np.array([[cos_theta, -sin_theta], [sin_theta, cos_theta]])
+        d_pp = R.dot(d_p.reshape(2, 1)).reshape(2)
+
+        m = d_pp[1] / d_pp[0]  # slope
+        a2 = self.a ** 2
+        b2 = self.b ** 2
+        x2 = (a2 * b2 / (a2 + b2 * m ** 2))
+        y2 = a2 * (1 - x2 / b2)
+
+        return np.sqrt(x2 + x2)
 
     def _which_are_in(self, points):
         distance_f1 = scipy.spatial.distance.cdist(self.f1.reshape(1, 2),
@@ -182,97 +261,105 @@ def sphere(r, q, p_scat, p_sol, scale=1.0, bkg=0.0):
 
 
 if __name__=="__main__":
+    e = Ellipse(2, 1)
+    e.orientation = [0, 1]
+    e.radius([0, 1])
+    e.radius([1, 1])
+    e.radius([1, 0])
 
-    import bokeh.plotting
-    import bokeh.layouts # gridplot
-    from bokeh.palettes import Dark2_7 as palette
+    import doctest
+    doctest.testmod()
+
+    # import bokeh.plotting
+    # import bokeh.layouts # gridplot
+    # from bokeh.palettes import Dark2_7 as palette
 
 
-    e = Ellipse(50, 50)
-    e.fill_with_points(1)
+    # e = Ellipse(50, 50)
+    # e.fill_with_points(1)
 
-    c = Circle(30)
-    c.fill_with_points(0.5)
+    # c = Circle(30)
+    # c.fill_with_points(0.5)
 
-    x = np.arange(-110, 110)
-    y = np.arange(-110, 110)
-    grid_points = np.array(np.meshgrid(x, y)).T.reshape(-1, 2)
+    # x = np.arange(-110, 110)
+    # y = np.arange(-110, 110)
+    # grid_points = np.array(np.meshgrid(x, y)).T.reshape(-1, 2)
 
-    p = bokeh.plotting.figure()
-    for i, shape in enumerate(['square', 'circle', 'ellipse', 'rectangle']):
+    # p = bokeh.plotting.figure()
+    # for i, shape in enumerate(['square', 'circle', 'ellipse', 'rectangle']):
 
-        if shape == 'circle':
+        # if shape == 'circle':
 
-            c = Circle(10, center=[-40, -8])
+            # c = Circle(10, center=[-40, -8])
 
-            in_points = c.in_or_out(grid_points)
-            out_points = np.invert(in_points)
+            # in_points = c.in_or_out(grid_points)
+            # out_points = np.invert(in_points)
 
-            n_in = in_points.sum()
-            n_out = out_points.sum()
-            bokeh.plotting.output_file('circle_{}.html'.format(c.radius))
+            # n_in = in_points.sum()
+            # n_out = out_points.sum()
+            # bokeh.plotting.output_file('circle_{}.html'.format(c.radius))
 
-        elif shape == 'ellipse':
-            e = Ellipse(35, 10, center=[30, -30], orientation=[-1, 2])
-            in_points = e.in_or_out(grid_points)
-            out_points = np.invert(in_points)
+        # elif shape == 'ellipse':
+            # e = Ellipse(35, 10, center=[30, -30], orientation=[-1, 2])
+            # in_points = e.in_or_out(grid_points)
+            # out_points = np.invert(in_points)
 
-            n_in = in_points.sum()
-            n_out = out_points.sum()
-            bokeh.plotting.output_file('ellipse_{}_{}'.format(e.a, e.b))
+            # n_in = in_points.sum()
+            # n_out = out_points.sum()
+            # bokeh.plotting.output_file('ellipse_{}_{}'.format(e.a, e.b))
 
-        elif shape == 'square':
-            s = Square(30, center=[-40, 75], orientation=[-1, -5])
-            print(s.area)
+        # elif shape == 'square':
+            # s = Square(30, center=[-40, 75], orientation=[-1, -5])
+            # print(s.area)
 
-            in_points = s.in_or_out(grid_points)
-            out_points = np.invert(in_points)
+            # in_points = s.in_or_out(grid_points)
+            # out_points = np.invert(in_points)
 
-            n_in = in_points.sum()
-            n_out = out_points.sum()
-            bokeh.plotting.output_file('square_{}.html'.format(s.side))
+            # n_in = in_points.sum()
+            # n_out = out_points.sum()
+            # bokeh.plotting.output_file('square_{}.html'.format(s.side))
 
-        elif shape == 'rectangle':
-            r = Rectangle(19, 14, center=[30, 60], orientation=[-1, 3])  #, center=[0.1, 0.1])
-            print(r.area)
+        # elif shape == 'rectangle':
+            # r = Rectangle(19, 14, center=[30, 60], orientation=[-1, 3])  #, center=[0.1, 0.1])
+            # print(r.area)
 
-            in_points = r.in_or_out(grid_points)
-            out_points = np.invert(in_points)
+            # in_points = r.in_or_out(grid_points)
+            # out_points = np.invert(in_points)
 
-            n_in = in_points.sum()
-            n_out = out_points.sum()
-            bokeh.plotting.output_file('reccangle_{}_{}.html'.format(
-                r.side1, r.side2))
+            # n_in = in_points.sum()
+            # n_out = out_points.sum()
+            # bokeh.plotting.output_file('reccangle_{}_{}.html'.format(
+                # r.side1, r.side2))
 
-        bokeh.plotting.output_file('shapes.html')
+        # bokeh.plotting.output_file('shapes.html')
 
-        p.circle(grid_points[in_points, 0], grid_points[in_points, 1],
-                 color=palette[i])
+        # p.circle(grid_points[in_points, 0], grid_points[in_points, 1],
+                 # color=palette[i])
 
-    # p.circle(grid_points[out_points, 0], grid_points[out_points, 1],
-             # color=palette[1])
-    bokeh.plotting.show(p)
+    # # p.circle(grid_points[out_points, 0], grid_points[out_points, 1],
+             # # color=palette[1])
+    # bokeh.plotting.show(p)
 
-    '''
-    # data from https://www.ncnr.nist.gov/resources/sansmodels/Sphere.html
-    ref = np.loadtxt('ncnr_sphere.iq')
+    # '''
+    # # data from https://www.ncnr.nist.gov/resources/sansmodels/Sphere.html
+    # ref = np.loadtxt('ncnr_sphere.iq')
 
-    scale = 1.0
-    bkg = 0.0
-    p_scat = 2e-6
-    p_sol = 1e-6
-    r = 60.0
+    # scale = 1.0
+    # bkg = 0.0
+    # p_scat = 2e-6
+    # p_sol = 1e-6
+    # r = 60.0
 
-    # q_min = ref[0, 0]
-    # q_max = ref[-1, 0]
-    # n_points = len(ref)
-    # q = np.logspace(np.log10(q_min), np.log10(q_max), n_points)
+    # # q_min = ref[0, 0]
+    # # q_max = ref[-1, 0]
+    # # n_points = len(ref)
+    # # q = np.logspace(np.log10(q_min), np.log10(q_max), n_points)
 
-    pq = sphere(r, ref[:, 0], p_scat, p_sol, scale=scale, bkg=bkg)
+    # pq = sphere(r, ref[:, 0], p_scat, p_sol, scale=scale, bkg=bkg)
 
-    # assert np.allclose(ref[:, 1], pq[:, 1], atol=1e-5)
-    if not np.allclose(ref, pq, atol=1e-5):
-        logging.error('results do not match')
-    '''
+    # # assert np.allclose(ref[:, 1], pq[:, 1], atol=1e-5)
+    # if not np.allclose(ref, pq, atol=1e-5):
+        # logging.error('results do not match')
+    # '''
 
-    logging.debug('\m/ >.< \m/>')
+    # logging.debug('\m/ >.< \m/>')
