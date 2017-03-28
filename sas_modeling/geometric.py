@@ -18,7 +18,7 @@ import scipy.spatial.distance
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
 
 
-class Ellipse:
+class Ellipse(object):
     r'''
     My numpydoc description of a kind
     of very exhautive numpydoc format docstring.
@@ -60,17 +60,27 @@ class Ellipse:
 
     Examples
     --------
-    >>> e = Ellipse(2, 1)
-    >>> e.radius([1, 0])
-    1.0
-    >>> e.radius([0, 1])
+    >>> e = Ellipse(2.0, 1.0, orientation=[1.0, 0.0], center=[0.0, 0.0])
+    >>> e.radius([1.0, 0.0])
     2.0
-    >>> e.radius([1, 1])
+    >>> e.radius([0.0, 1.0])
+    1.0
+    >>> e.radius([1.0, 1.0])
+    1.2649110640673518
+    >>> e.radius([1.0, np.sqrt(3)])
+    1.1094003924504583
+    >>> e.radius([np.sqrt(3), 1.0])
+    1.5118578920369088
 
-    >>> e.radius([1, np.sqrt(3)])
-
-    >>> e.radius([np.sqrt(3), 1])
-
+    Note that this satifies the condition that pf1 + pf2 = 2 * a
+    >>> d = np.random.rand(2)
+    >>> d /= np.linalg.norm(d)
+    >>> r = e.radius(d)
+    >>> p = r * d
+    >>> pf1 = np.linalg.norm(e.f1 - p)
+    >>> pf2 = np.linalg.norm(e.f2 - p)
+    >>> np.allclose(pf1 + pf2, 2 * e.a)
+    True
 
     '''
 
@@ -106,7 +116,7 @@ class Ellipse:
         return np.pi * self.a * self.b
 
     def radius(self, d):
-        theta = np.arctan(self.orientation[0], self.orientation[1])
+        theta = -np.arctan2(self.orientation[1], self.orientation[0])
         cos_theta = np.cos(theta)
         sin_theta = np.sin(theta)
 
@@ -114,13 +124,16 @@ class Ellipse:
         R = np.array([[cos_theta, -sin_theta], [sin_theta, cos_theta]])
         d_pp = R.dot(d_p.reshape(2, 1)).reshape(2)
 
-        m = d_pp[1] / d_pp[0]  # slope
-        a2 = self.a ** 2
-        b2 = self.b ** 2
-        x2 = (a2 * b2 / (a2 + b2 * m ** 2))
-        y2 = a2 * (1 - x2 / b2)
+        if d_pp[0] == 0.0:
+            return self.b
 
-        return np.sqrt(x2 + x2)
+        else:
+            m = d_pp[1] / d_pp[0]  # slope
+            a2 = self.a ** 2
+            b2 = self.b ** 2
+            x2 = (b2 * a2 / (b2 + a2 * m ** 2))
+            y2 = b2 * (1 - x2 / a2)
+            return np.sqrt(x2 + y2)
 
     def _which_are_in(self, points):
         distance_f1 = scipy.spatial.distance.cdist(self.f1.reshape(1, 2),
@@ -175,7 +188,7 @@ class Circle(Ellipse):
         return 2 * np.pi * self.radius
 
 
-class Rectangle:
+class Rectangle(object):
     def __repr__(self):
         return ('rectangle with center: {}, side 1: {}, side 2: {}, and '
                 'orientation: {}'.format(self.center, self.side1,
@@ -260,12 +273,11 @@ def sphere(r, q, p_scat, p_sol, scale=1.0, bkg=0.0):
     return pq
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     e = Ellipse(2, 1)
-    e.orientation = [0, 1]
-    e.radius([0, 1])
+    e.radius([1, 0])  # should be a
+    e.radius([0, 1])  # should be b
     e.radius([1, 1])
-    e.radius([1, 0])
 
     import doctest
     doctest.testmod()
