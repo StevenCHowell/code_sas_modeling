@@ -152,8 +152,9 @@ class Ellipse(object):
             m = d_pp[1] / d_pp[0]  # slope
             a2 = self.a ** 2
             b2 = self.b ** 2
-            x2 = b2 * a2 / (b2 + a2 * m ** 2)
-            y2 = b2 * (1 - x2 / a2)
+            m2 = m ** 2
+            x2 = b2 * a2 / (b2 + a2 * m2)
+            y2 = m2 * x2
             return np.sqrt(x2 + y2)
 
     def _which_are_in(self, points):
