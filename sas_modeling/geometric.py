@@ -127,6 +127,7 @@ class Ellipse(object):
     @property
     def orientation(self):
         return self._orientation
+
     @orientation.setter
     def orientation(self, val):
         self._orientation = val / np.linalg.norm(val)
@@ -240,7 +241,7 @@ class Rectangle(object):
             gt1[i] = 1
         for i, val in enumerate(lt1):
             assert np.allclose(val, -1), ('magnitude of cosine argument is '
-                                         'not positive definite')
+                                          'not positive definite')
             lt1[i] = 1
         arg[arg > 1] = gt1
         arg[arg < -1] = lt1
@@ -263,7 +264,7 @@ class Square(Rectangle):
         return 'square with center: {}, side: {}, and orientation: {}'.format(
             self.center, self.side, self.orientation)
 
-    def __init__(self, side, center=[0,0], orientation=[1,0]):
+    def __init__(self, side, center=[0, 0], orientation=[1, 0]):
         self.side = side
         self.side1 = side
         self.side2 = side
@@ -300,7 +301,6 @@ if __name__ == "__main__":
     # import bokeh.plotting
     # import bokeh.layouts # gridplot
     # from bokeh.palettes import Dark2_7 as palette
-
 
     # e = Ellipse(50, 50)
     # e.fill_with_points(1)
