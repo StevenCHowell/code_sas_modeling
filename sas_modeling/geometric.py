@@ -49,7 +49,7 @@ class Ellipse(object):
     -------
     area
         return the area of the ellipse
-    radius(d=[1.0, 1.0])
+    calc_radius(d=[1.0, 1.0])
         radius along an input direction
     in_or_out(points)
         create the `in_points`, `out_points`, and `n_in` points attributes
@@ -61,21 +61,21 @@ class Ellipse(object):
     Examples
     --------
     >>> e = Ellipse(2.0, 1.0, orientation=[1.0, 0.0], center=[0.0, 0.0])
-    >>> e.radius([1.0, 0.0])
+    >>> e.calc_radius([1.0, 0.0])
     2.0
-    >>> e.radius([0.0, 1.0])
+    >>> e.calc_radius([0.0, 1.0])
     1.0
-    >>> e.radius([1.0, 1.0])
+    >>> e.calc_radius([1.0, 1.0])
     1.2649110640673518
-    >>> e.radius([1.0, np.sqrt(3)])
+    >>> e.calc_radius([1.0, np.sqrt(3)])
     1.1094003924504583
-    >>> e.radius([np.sqrt(3), 1.0])
+    >>> e.calc_radius([np.sqrt(3), 1.0])
     1.5118578920369088
 
     Note that this satifies the condition that pf1 + pf2 = 2 * a
     >>> d = np.random.rand(2)
     >>> d /= np.linalg.norm(d)
-    >>> r = e.radius(d)
+    >>> r = e.calc_radius(d)
     >>> p = r * d
     >>> pf1 = np.linalg.norm(e.f1 - p)
     >>> pf2 = np.linalg.norm(e.f2 - p)
@@ -85,9 +85,9 @@ class Ellipse(object):
     This also works for rotated and offset ellipses
     >>> c = np.array([5.0, -2.0])
     >>> e = Ellipse(2.0, 1.0, orientation=[1.0, 1.0], center=c)
-    >>> e.radius(c + [1.0, 1.0])
+    >>> e.calc_radius(c + [1.0, 1.0])
     2.0
-    >>> e.radius(c + [-1.0, 1.0])
+    >>> e.calc_radius(c + [-1.0, 1.0])
     1.0
 
     For an offset ellipse, demonstrating the radius value indeed satifies
@@ -95,7 +95,7 @@ class Ellipse(object):
     center point
     >>> d = np.random.rand(2)
     >>> d /= np.linalg.norm(d)
-    >>> r = e.radius(d)
+    >>> r = e.calc_radius(d)
     >>> p = r * (d - c) / np.linalg.norm(d - c)
     >>> pf1 = np.linalg.norm(e.f1 - c - p)
     >>> pf2 = np.linalg.norm(e.f2 - c - p)
@@ -136,7 +136,7 @@ class Ellipse(object):
     def area(self):
         return np.pi * self.a * self.b
 
-    def radius(self, d):
+    def calc_radius(self, d):
         theta = -np.arctan2(self.orientation[1], self.orientation[0])
         cos_theta = np.cos(theta)
         sin_theta = np.sin(theta)
