@@ -121,8 +121,14 @@ class Ellipse(object):
         self.f = np.sqrt(self.a ** 2 - self.b ** 2)
         self.center = np.array(center)
         self._orientation = orientation / np.linalg.norm(orientation)
-        self.f1 = self.center + self.orientation * self.f
-        self.f2 = self.center - self.orientation * self.f
+
+    @property
+    def f1(self):
+        return self.center + self.orientation * self.f
+
+    @property
+    def f2(self):
+        return self.center - self.orientation * self.f
 
     @property
     def orientation(self):
