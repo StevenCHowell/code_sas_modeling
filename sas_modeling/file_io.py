@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division, print_function
 
-import os
 import errno
+import glob
+import os
+import numpy as np
 
 def mkdir_p(path):
     '''
@@ -26,7 +28,8 @@ def get_files(pr_dir, iq_dir):
     n_iq = len(iq_files)
     n_pr = len(pr_files)
     if n_iq != n_pr:
-        logging.warning('mismatch number of files, n_iq: {}, n_pr: {}'.format(n_iq, n_pr))
+        logging.warning('mismatch number of files, n_iq: {}, n_pr: {}'.format(
+            n_iq, n_pr))
     print('found {} P(r) and {} I(Q) files'.format(n_pr, n_iq))
     return pr_files, iq_files
 
