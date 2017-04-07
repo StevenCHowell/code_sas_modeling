@@ -208,8 +208,6 @@ class Circle(Ellipse):
         self.center = np.array(center)
         self.orientation = np.array([1, 0])
         self.f = 0.0  # np.sqrt(self.a ** 2 - self.b ** 2)
-        self.f1 = self.center + self.orientation * self.f
-        self.f2 = self.center - self.orientation * self.f
 
     @property
     def perimiter(self):
