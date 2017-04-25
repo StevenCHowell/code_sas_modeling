@@ -232,12 +232,12 @@ class Rectangle(object):
 
     def _which_are_in(self, points):
         v_points = points - self.center
-        d_parl = v_points.dot(self.orientation.T)
+        d_par = v_points.dot(self.orientation.T)
         p_mag = np.linalg.norm(v_points, axis=1)
         if np.alltrue(v_points[p_mag.argmin()] == 0):
             p_mag[p_mag.argmin()] = 1.0
 
-        arg = d_parl / p_mag
+        arg = d_par / p_mag
         gt1 = arg[arg > 1]
         lt1 = arg[arg < -1]
         for i, val in enumerate(gt1):
@@ -253,10 +253,10 @@ class Rectangle(object):
 
         assert np.alltrue(np.abs(arg) <= 1), 'invalid cosine arg'
         theta = np.arccos(arg)
-        d_perp = p_mag * np.sin(theta)
+        d_per = p_mag * np.sin(theta)
 
-        in_mask_par = np.abs(d_parl) < self.side1
-        in_mask_per = d_perp < self.side2
+        in_mask_par = np.abs(d_par) < self.side1 / 2
+        in_mask_per = d_per < self.side2 / 2
         in_mask = in_mask_par & in_mask_per
         return in_mask
 
