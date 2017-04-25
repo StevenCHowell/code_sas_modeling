@@ -230,7 +230,7 @@ class Rectangle(object):
     def area(self):
         return self.side1 * self.side2
 
-    def in_or_out(self, points):
+    def _which_are_in(self, points):
         v_points = points - self.center
         d_parl = v_points.dot(self.orientation.T)
         p_mag = np.linalg.norm(v_points, axis=1)
@@ -258,10 +258,30 @@ class Rectangle(object):
         in_mask_par = np.abs(d_parl) < self.side1
         in_mask_per = d_perp < self.side2
         in_mask = in_mask_par & in_mask_per
+        return in_mask
 
+    def in_or_out(self, points):
+        in_mask = self._which_are_in(points)
         self.in_points = points[in_mask]
         self.out_points = points[np.invert(in_mask)]
         self.n_in = len(self.in_points)
+
+    def fill_with_points(self, density):
+        n = np.round(density * self.area).astype(int)
+        n_in = 0
+        xy_range = np.sqrt(self.side1 ** 2 + self.side2 ** 2)
+        xy_min = self.center - xy_range / 2
+        in_points = []
+        while n_in < n:
+            n_remaining = n - n_in
+            points = np.random.rand(int(1.7 * n_remaining), 2)
+            points = points * xy_range + xy_min
+            in_mask = self._which_are_in(points)
+            n_in += in_mask.sum()
+            in_points.append(points[in_mask])
+        in_points = np.vstack(in_points)[:n]
+        self.in_points = in_points
+        self.n_in = n
 
 
 class Square(Rectangle):
